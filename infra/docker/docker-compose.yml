@@ -1,0 +1,43 @@
+# ServerHub 開発用インフラ（PostgreSQL）
+#
+# 使い方（リポジトリルートで実行すること）:
+#   起動:   docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+#   停止:   docker compose --env-file .env -f infra/docker/docker-compose.yml down
+#   破棄:   docker compose --env-file .env -f infra/docker/docker-compose.yml down -v
+#   ログ:   docker compose --env-file .env -f infra/docker/docker-compose.yml logs -f db
+#
+# --env-file を付けるのは、-f で compose ファイルを指定すると .env の探索先が
+# compose ファイルのディレクトリになり、リポジトリルートの .env が読まれないため。
+
+name: serverhub
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: serverhub-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required (see .env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required (see .env.example)}
+      # タイムゾーン・照合順序を固定（環境差異による並び順のブレを防ぐ）
+      TZ: Asia/Tokyo
+      LANG: C.UTF-8
+    ports:
+      # ローカルに既存の PostgreSQL がある場合は .env の DB_PORT で回避する
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 初回起動時のみ実行される初期化スクリプト（スキーマは Flyway が管理するため、
+      # ここでは拡張・ロールなど Flyway 以前に必要なもののみ）
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    name: serverhub-pgdata

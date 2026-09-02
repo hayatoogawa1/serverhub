@@ -98,18 +98,22 @@ serverhub/
 
 ### セットアップ手順
 
-> 🚧 Phase 0 進行中。各コンポーネント追加時に追記する。
+> 🚧 Phase 0 進行中。Backend/Frontend は各コンポーネント追加時に追記する。
+
+すべてリポジトリルートで実行する。
 
 ```bash
 # 1. リポジトリ取得
-git clone <REPO_URL> serverhub && cd serverhub
+git clone https://github.com/<owner>/serverhub.git serverhub && cd serverhub
 
 # 2. 環境変数ファイルを作成（.env は Git 管理外）
 cp .env.example .env
-#   → .env を編集して DB パスワード等を設定
+#   → .env を編集。ローカルに別の PostgreSQL が動いている場合は DB_PORT を変更する。
 
-# 3. 開発用 DB 起動（Phase 0-2 以降）
-#   docker compose -f infra/docker/docker-compose.yml up -d
+# 3. 開発用 DB 起動
+docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+#   起動確認（healthy になるまで待つ）:
+docker compose --env-file .env -f infra/docker/docker-compose.yml ps
 
 # 4. Backend 起動（Phase 0-3 以降）
 #   cd backend && ./gradlew bootRun
@@ -118,22 +122,45 @@ cp .env.example .env
 #   cd frontend && npm ci && npm run dev
 ```
 
+> `--env-file .env` を必ず付ける。`-f` で compose ファイルを指定すると `.env` の
+> 探索先が `infra/docker/` になり、ルートの `.env` が読まれないため。
+
 ### DB の初期化
 
-> 🚧 Phase 0-2 / Phase 4 で記載。
-> Flyway によるマイグレーション適用手順、シードデータ（ユーザー等）の投入方法をここに書く。
+- **スキーマ（テーブル等）**: Flyway で管理する（Phase 4 以降。Backend 起動時に自動適用予定）。
+- **初回起動時のみの初期化**（拡張の有効化・ロール作成など）: `infra/docker/initdb/` に
+  `*.sql` / `*.sh` を置く。データボリュームが空のときだけ実行される。詳細は
+  [infra/docker/initdb/README.md](infra/docker/initdb/README.md)。
+- **シードデータ（ログインユーザー等）**: Flyway のシード用マイグレーションで投入予定（Phase 4〜5 で確定）。
+- **DB を完全に作り直す**:
+
+  ```bash
+  docker compose --env-file .env -f infra/docker/docker-compose.yml down -v
+  docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+  ```
+
+### DB への接続確認
+
+```bash
+docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+# または任意の GUI クライアントから localhost:${DB_PORT} へ接続
+```
 
 ---
 
 ## よく使うコマンド
 
-> 🚧 各コンポーネント追加時に追記。
+> 🚧 Backend/Frontend は各コンポーネント追加時に追記。すべてリポジトリルートで実行。
+> `DC` は `docker compose --env-file .env -f infra/docker/docker-compose.yml` の略。
 
 | 目的 | コマンド |
 |---|---|
-| DB 起動 | `docker compose -f infra/docker/docker-compose.yml up -d` |
-| DB 停止 | `docker compose -f infra/docker/docker-compose.yml down` |
-| DB 破棄（データ含む） | `docker compose -f infra/docker/docker-compose.yml down -v` |
+| DB 起動 | `$DC up -d` |
+| DB 状態確認 | `$DC ps` |
+| DB ログ | `$DC logs -f db` |
+| DB 停止 | `$DC down` |
+| DB 破棄（データ含む） | `$DC down -v` |
+| DB へ psql 接続 | `docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
 | Backend テスト | `cd backend && ./gradlew check` |
 | Frontend テスト | `cd frontend && npm run test` |
 

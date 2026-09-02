@@ -26,14 +26,13 @@
 | 層 | 技術 | バージョン |
 |---|---|---|
 | Backend | Java | 17 |
-| | Spring Boot | 4.1.x（※ Phase 0 セットアップ時に最新パッチを確定） |
-| | Spring Security | 7.x（Spring Boot 4.1 同梱） |
-| | Doma 2/3 | 3.x |
-| | doma-spring-boot-starter | 3.0.x |
-| | Flyway | Spring Boot 管理バージョン（`spring-boot-starter-flyway` 経由） |
-| | springdoc-openapi | 3.1.x |
+| | Spring Boot | 4.1.1 |
+| | Spring Security | 7.x（Spring Boot 4.1.1 同梱） |
+| | Doma | doma-processor 3.11.1 / doma-spring-boot-starter 3.0.0 |
+| | Flyway | Spring Boot 管理バージョン（`spring-boot-starter-flyway` + `flyway-database-postgresql`） |
+| | springdoc-openapi | 3.1.0（`springdoc-openapi-starter-webmvc-ui`） |
 | | PostgreSQL | 16 |
-| ビルド | Gradle（Kotlin DSL）＋ Wrapper | 8.x |
+| ビルド | Gradle（Kotlin DSL）＋ Wrapper | 8.14.5 |
 | Frontend | React | 18 |
 | | TypeScript | 5.x |
 | | Vite | 5.x |
@@ -56,11 +55,10 @@
 ```
 serverhub/
 ├── backend/      Spring Boot アプリケーション（Gradle Wrapper 同梱）
+│   └── src/main/resources/db/migration/   Flyway マイグレーション SQL
 ├── frontend/     React + Vite アプリケーション
 ├── infra/
 │   └── docker/   開発用 docker-compose（PostgreSQL 等）
-├── db/
-│   └── migration/  Flyway マイグレーション SQL
 ├── docs/
 │   ├── requirements/  要件定義（Phase 1）
 │   ├── design/basic/  基本設計（Phase 2）
@@ -115,8 +113,11 @@ docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
 #   起動確認（healthy になるまで待つ）:
 docker compose --env-file .env -f infra/docker/docker-compose.yml ps
 
-# 4. Backend 起動（Phase 0-3 以降）
-#   cd backend && ./gradlew bootRun
+# 4. Backend 起動（DB が起動している前提）
+cd backend && ./gradlew bootRun
+#   http://localhost:8080/actuator/health   → {"status":"UP"}
+#   http://localhost:8080/swagger-ui.html   → API ドキュメント
+cd ..
 
 # 5. Frontend 起動（Phase 0-4 以降）
 #   cd frontend && npm ci && npm run dev
@@ -124,6 +125,12 @@ docker compose --env-file .env -f infra/docker/docker-compose.yml ps
 
 > `--env-file .env` を必ず付ける。`-f` で compose ファイルを指定すると `.env` の
 > 探索先が `infra/docker/` になり、ルートの `.env` が読まれないため。
+
+> Backend は `.env` を直接読まない。既定値（`localhost:5432` / `serverhub` / `changeme`）は
+> `.env.example` と一致させてあるので、既定のまま `docker compose` を起動していれば
+> `./gradlew bootRun` はそのまま繋がる。DB 接続情報を変えた場合は
+> `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`
+> を環境変数で渡す。
 
 ### DB の初期化
 
@@ -161,7 +168,10 @@ docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 | DB 停止 | `$DC down` |
 | DB 破棄（データ含む） | `$DC down -v` |
 | DB へ psql 接続 | `docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
-| Backend テスト | `cd backend && ./gradlew check` |
+| Backend 起動 | `cd backend && ./gradlew bootRun` |
+| Backend ビルド | `cd backend && ./gradlew build` |
+| Backend テスト | `cd backend && ./gradlew test`（Testcontainers を使うため Docker が必要） |
+| Backend 静的検査＋テスト | `cd backend && ./gradlew check` |
 | Frontend テスト | `cd frontend && npm run test` |
 
 ---

@@ -31,13 +31,13 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | 層 | 技術 | バージョン |
 |---|---|---|
 | Backend | Java | 17 |
-| | Spring Boot | 4.1.x（Phase 0 で最新パッチ確定） |
-| | Spring Security | Spring Boot 4.1 同梱（7.x 系） |
-| | Doma | 3.x + doma-spring-boot-starter 3.0.x |
-| | マイグレーション | Flyway（`spring-boot-starter-flyway` 経由） |
-| | API ドキュメント | springdoc-openapi 3.1.x（コードファースト） |
+| | Spring Boot | 4.1.1 |
+| | Spring Security | Spring Boot 4.1.1 同梱（7.x 系） |
+| | Doma | doma-processor 3.11.1 + doma-spring-boot-starter 3.0.0 + doma compile plugin 4.0.3 |
+| | マイグレーション | Flyway（`spring-boot-starter-flyway` + `flyway-database-postgresql`） |
+| | API ドキュメント | springdoc-openapi-starter-webmvc-ui 3.1.0（コードファースト） |
 | | DB | PostgreSQL 16 |
-| | ビルド | Gradle 8.x（Kotlin DSL）+ Wrapper |
+| | ビルド | Gradle 8.14.5（Kotlin DSL）+ Wrapper |
 | Frontend | React 18 / TypeScript 5 / Vite 5 | |
 | | MUI 5 / React Router 6 / Axios / TanStack Query 5 | |
 | | グラフ | Recharts（**未確定**・要承認） |
@@ -90,7 +90,7 @@ Page → Feature → Component
 
 ### 命名
 
-- Java: パッケージ `com.serverhub.*`（**TODO: ベースパッケージ確定**）。クラス/メソッドは英語、意図が伝わる名前。
+- Java: ベースパッケージは `com.serverhub`（確定）。以下、機能別にサブパッケージを切る。クラス/メソッドは英語、意図が伝わる名前。
 - TypeScript: コンポーネント PascalCase、hook は `useXxx`、API 関数は動詞始まり（`getServers` 等）。
 - DB: テーブル・カラムは snake_case、複数形テーブル名。
 - API パス: `/api/v1/...`（**TODO: 確定**）。
@@ -190,13 +190,27 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 
 > 🚧 各コンポーネント追加時に追記。README.md の「よく使うコマンド」と同期する。
 
+すべてリポジトリルートから。`DC` = `docker compose --env-file .env -f infra/docker/docker-compose.yml`。
+
+| 目的 | コマンド |
+|---|---|
+| 開発用 DB 起動 / 停止 / 破棄 | `$DC up -d` / `$DC down` / `$DC down -v` |
+| Backend 起動 | `cd backend && ./gradlew bootRun` |
+| Backend ビルド / テスト | `cd backend && ./gradlew build` / `./gradlew test`（Docker 必須） |
+| Flyway マイグレーション配置先 | `backend/src/main/resources/db/migration/`（`V<n>__<説明>.sql`） |
+| API ドキュメント | `http://localhost:8080/swagger-ui.html` |
+
 ---
 
 ## 11. 未確定事項（要承認）
 
-- ベースパッケージ名（`com.serverhub` 等）
 - API のバージョニング方針（`/api/v1`）とレスポンスエンベロープ形式
 - 一覧のデフォルトソート・1 ページ件数
 - サーバー属性 / メンテナンス履歴項目 / 環境・ステータス区分（B2〜B5、要件定義で叩き台 → 承認）
 - グラフライブラリ（Recharts 候補）
-- Git hosting（GitHub/GitLab）と PR 運用の具体（remote 未設定）
+
+### 確定済み（履歴）
+
+- ベースパッケージ `com.serverhub`（Phase 0-3）
+- Backend バージョン一式 → [docs/adr/0001](docs/adr/0001-backend-technology-versions.md)
+- Git hosting: GitHub（public, `hayatoogawa1/serverhub`）。`feature/*` → PR → 自己レビュー → `main`

@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────
+# 環境変数・シークレット（絶対にコミットしない）
+# ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials.json
+
+# ─────────────────────────────────────────────
+# Java / Gradle (backend/)
+# ─────────────────────────────────────────────
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+bin/
+out/
+*.class
+*.log
+*.jar
+!gradle-wrapper.jar
+hs_err_pid*
+replay_pid*
+
+# Doma: アノテーションプロセッサ生成物
+generated/
+**/generated-sources/
+
+# ─────────────────────────────────────────────
+# Node / Vite (frontend/)
+# ─────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+.vite/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────
+# ボリュームデータをローカルにマウントする場合の置き場
+infra/docker/data/
+*.pid
+
+# ─────────────────────────────────────────────
+# IDE / エディタ
+# ─────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/settings.json.sample
+!.vscode/extensions.json
+.project
+.classpath
+.settings/
+.factorypath
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────────
+# Claude Code
+# ─────────────────────────────────────────────
+.claude/settings.local.json

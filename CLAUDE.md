@@ -80,6 +80,9 @@ Page → Feature → Component
 - CSRF 対策を有効化。SPA はバックエンドと同一ドメイン配信前提。
 - MVP は全ユーザー同一権限。ただし **将来の権限管理追加を考慮した設計**にする（ロール用の拡張ポイントを残す）。
 - ユーザー登録画面は作らない。ユーザーは Flyway シード SQL または初期化スクリプトで作成。
+- セキュリティ要件の詳細（認証・セッション・CSRF・入力検証・SQLi/XSS・機密情報・ログ・
+  エラー・HTTP ヘッダ・DB・Secret・CORS・脆弱性管理と MVP での実装範囲）は
+  [docs/requirements/requirements.md](docs/requirements/requirements.md) §10.1 を参照。
 
 ### 削除方式
 

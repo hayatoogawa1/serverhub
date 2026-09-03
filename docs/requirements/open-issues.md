@@ -20,6 +20,13 @@
 | Q4 | 要件 | ダッシュボードの「最近のメンテナンス」の表示件数・期間 | 直近 10 件（期間指定なし） | 要承認 | — |
 | Q5 | 要件 | タグの管理方法（自由入力か、事前定義リストからか） | サーバー編集時に自由入力（既存タグはサジェスト）。タグ単独の管理画面は MVP 対象外 | 要承認 | — |
 | Q6 | 要件 | サーバーの論理削除後の扱い（復元機能の要否、一覧での表示） | 復元機能は MVP 対象外。削除済みは一覧・検索・ダッシュボード集計から除外。DB 上は保持 | 要承認 | requirements.md §5.2 |
+| S1 | セキュリティ/設計 | DB の管理ユーザーとアプリ接続ユーザーの分離、アプリユーザーの権限最小化を **MVP で実装するか、Phase 4〜5 に回すか** | Phase 4（DB 設計）〜5（Backend 実装）で対応。`initdb/` でアプリ用ロール（対象スキーマの DML のみ）を作成、Flyway/管理は別権限。現状の docker-compose・[ADR 0001](../adr/0001-backend-technology-versions.md) は単一ユーザー | 要承認 | requirements.md §10.1.15 |
+| S2 | セキュリティ | 開発 DB（docker compose）の公開ポートを `127.0.0.1` バインドに限定するか | `ports` を `127.0.0.1:${DB_PORT}:5432` にする。WSL/他ツールからの接続要件があれば緩和。影響小のため MVP で対応可 | 要承認 | requirements.md §10.1.15、infra/docker/docker-compose.yml |
+| S3 | セキュリティ | ログイン試行のブルートフォース対策（アカウントロック / レート制限）を MVP で入れるか | 将来対応。MVP は失敗ログの記録のみ。社内・小規模・同一オリジン前提でリスク許容。簡易な試行回数制限（例: 5 回失敗で一定時間ロック）を入れる案もある | 要承認 | requirements.md §10.1.2 |
+| S4 | セキュリティ | セッションのアイドルタイムアウト時間 | 30 分（`server.servlet.session.timeout=30m`） | 要承認 | requirements.md §10.1.3 |
+| S5 | セキュリティ | Content-Security-Policy をどこまで厳格にするか | MVP は `default-src 'self'` ベースの緩め（`style-src` に `'unsafe-inline'` 許容等）から開始し、Swagger UI を隔離しつつ Phase 2/3 で段階的に厳格化。厳格 CSP は MUI/Swagger/Vite と競合しやすい | 保留（Phase 2/3） | requirements.md §10.1.13 |
+| S6 | セキュリティ/非機能 | セッションストア（インメモリ or 外部ストア） | MVP は単一インスタンス前提でインメモリ。スケールアウト時に Redis 等へ。可用性・性能（10.2/10.3）と合わせて確定 | 保留 | requirements.md §10.1.3 |
+| S7 | セキュリティ/設計 | `application.yml` に DB 接続の既定値（`changeme` 等）を残すか、環境変数必須にするか | 現状は「`.env.example` と同一のダミー値をコミット・本番は `SPRING_DATASOURCE_*` で上書き」（[ADR 0001](../adr/0001-backend-technology-versions.md)）。厳密運用なら既定値を除去し起動時必須にする。開発体験（`make setup` だけで起動）とのトレードオフ | 要承認 | requirements.md §10.1.16 |
 
 ---
 

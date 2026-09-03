@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# push 前の総合チェック。変更があった側だけ実行する。
+#
+# 一時的にスキップしたい場合: git push --no-verify
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# push 対象範囲で変更されたファイル（リモート未登録なら全体）
+range="origin/HEAD...HEAD"
+git rev-parse --verify --quiet origin/HEAD >/dev/null || range="HEAD"
+changed="$(git diff --name-only "$range" 2>/dev/null || git ls-files)"
+
+fail=0
+
+if grep -qE '^backend/' <<<"$changed"; then
+  if docker info >/dev/null 2>&1; then
+    echo "▶ backend: ./gradlew check（テスト含む）"
+    ( cd backend && ./gradlew check ) || fail=1
+  else
+    echo "▶ backend: ./gradlew build -x test + spotlessCheck"
+    echo "  ⚠ Docker が使えないため Testcontainers テストはスキップ（CI で実行される）"
+    ( cd backend && ./gradlew build -x test spotlessCheck ) || fail=1
+  fi
+fi
+
+if grep -qE '^frontend/' <<<"$changed"; then
+  echo "▶ frontend: typecheck / lint / format / test / build"
+  ( cd frontend && npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build ) || fail=1
+fi
+
+[ "$fail" -eq 0 ] || { echo "✗ pre-push チェックに失敗しました（緊急時は git push --no-verify）"; exit 1; }
+echo "✓ pre-push OK"

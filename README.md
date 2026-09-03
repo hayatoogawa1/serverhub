@@ -163,22 +163,20 @@ docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 ## よく使うコマンド
 
-> 🚧 Backend/Frontend は各コンポーネント追加時に追記。すべてリポジトリルートで実行。
-> `DC` は `docker compose --env-file .env -f infra/docker/docker-compose.yml` の略。
+すべてリポジトリルートから `make <target>`。`make help` で一覧。
 
-| 目的 | コマンド |
-|---|---|
-| DB 起動 | `$DC up -d` |
-| DB 状態確認 | `$DC ps` |
-| DB ログ | `$DC logs -f db` |
-| DB 停止 | `$DC down` |
-| DB 破棄（データ含む） | `$DC down -v` |
-| DB へ psql 接続 | `docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` |
-| Backend 起動 | `cd backend && ./gradlew bootRun` |
-| Backend ビルド | `cd backend && ./gradlew build` |
-| Backend テスト | `cd backend && ./gradlew test`（Testcontainers を使うため Docker が必要） |
-| Backend 静的検査＋テスト | `cd backend && ./gradlew check` |
-| Frontend テスト | `cd frontend && npm run test` |
+| 目的 | コマンド | 生のコマンド |
+|---|---|---|
+| 初回セットアップ | `make setup` | `.env` 作成 + git hooks 有効化 + `npm ci` |
+| DB 起動 / 停止 / 作り直し | `make db-up` / `make db-down` / `make db-reset` | `docker compose --env-file .env -f infra/docker/docker-compose.yml ...` |
+| DB へ psql 接続 | `make db-psql` | `docker exec -it serverhub-db psql ...` |
+| Backend 起動 | `make be-run` | `cd backend && ./gradlew bootRun` |
+| Backend ビルド / テスト / 整形 | `make be-build` / `make be-test` / `make be-format` | `./gradlew build -x test` / `test` / `spotlessApply` |
+| Frontend 開発サーバー | `make fe-dev` | `cd frontend && npm run dev` |
+| Frontend チェック / ビルド / 整形 | `make fe-check` / `make fe-build` / `make fe-format` | typecheck+lint+format+test / build / prettier |
+| 全チェック（push 前相当） | `make check` | `be-check` + `fe-check` |
+
+> `make be-test` は Testcontainers で PostgreSQL を起動するため Docker が必要。
 
 ---
 
@@ -190,6 +188,17 @@ docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 - **コミット**: 1 コミット 1 目的。小さく、意味のあるメッセージ。
 - **設計とコードの同期**: コードを変更したら関連する `docs/` も更新する。
 - **セキュリティ**: シークレットをコミットしない。`.env` は Git 管理外。
+
+### 自動チェック
+
+| 仕組み | タイミング | 内容 |
+|---|---|---|
+| Claude Code フック | ファイル編集後 | Frontend の変更ファイルを Prettier 整形（`.claude/hooks/format-file.py`） |
+| git `pre-commit` | コミット時 | 変更ファイルのみ Prettier `--check` + ESLint、Java は `spotlessCheck`、`.env` 混入検知（`.githooks/`） |
+| git `pre-push` | プッシュ時 | 変更のあった側の `./gradlew check` / `npm run typecheck+lint+test+build`（Docker 不在時は BE テストをスキップし CI に委ねる） |
+| GitHub Actions | push / PR（`main`） | Backend `./gradlew check`（Testcontainers 含む）、Frontend typecheck+lint+format+test+build |
+
+git hooks は `make setup`（または `make hooks`）で有効化する。緊急時は `git commit/push --no-verify`。
 
 ---
 

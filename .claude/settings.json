@@ -1,7 +1,18 @@
 {
   "permissions": {
-    "allow": [
-      "WebSearch"
+    "allow": ["WebSearch"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-file.py\""
+          }
+        ]
+      }
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 | ドキュメント | 内容 | 状態 |
 |---|---|---|
-| [requirements.md](requirements.md) | 要件定義書本体 | 🚧 ドラフト（1〜9 章 + 10.1 セキュリティ=確定） |
+| [requirements.md](requirements.md) | 要件定義書本体 | 🚧 ドラフト（1〜11 章。12〜13 章は作成中） |
 | [open-issues.md](open-issues.md) | 未決事項・確認事項の管理表 | 進行中 |
 
 ## 進め方

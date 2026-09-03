@@ -38,13 +38,15 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | | API ドキュメント | springdoc-openapi-starter-webmvc-ui 3.1.0（コードファースト） |
 | | DB | PostgreSQL 16 |
 | | ビルド | Gradle 8.14.5（Kotlin DSL）+ Wrapper |
-| Frontend | React 18 / TypeScript 5 / Vite 5 | |
-| | MUI 5 / React Router 6 / Axios / TanStack Query 5 | |
+| Frontend | React 19.2 / TypeScript 6.0.x / Vite 8.2 | |
+| | MUI 9 / React Router 7 / Axios 1.x / TanStack Query 5 | |
+| | Lint/Format | ESLint 10 flat + typescript-eslint（型情報つき）+ Prettier 3 |
+| | Node.js | 20.19 系（`.nvmrc`）。⚠️ Node 20 は EOL、24 への更新を予定 |
 | | グラフ | Recharts（**未確定**・要承認） |
-| テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers | |
-| | FE: Vitest / React Testing Library / MSW | |
+| テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | |
+| | FE: Vitest 4 / React Testing Library / MSW 2 / jsdom | |
 
-バージョン選定根拠は `docs/adr/` に記録する。
+バージョン選定根拠は `docs/adr/` に記録する（[0001](docs/adr/0001-backend-technology-versions.md) BE / [0002](docs/adr/0002-frontend-technology-versions.md) FE）。
 
 ---
 

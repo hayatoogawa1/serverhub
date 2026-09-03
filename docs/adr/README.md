@@ -9,3 +9,4 @@
 | # | タイトル | ステータス |
 |---|---|---|
 | [0001](0001-backend-technology-versions.md) | Backend の技術スタックとバージョン確定 | Accepted |
+| [0002](0002-frontend-technology-versions.md) | Frontend の技術スタックとバージョン確定 | Accepted |

@@ -1,0 +1,10 @@
+/* 追加のグローバルスタイルはここに。基本的なリセットは MUI の CssBaseline が担う。 */
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}

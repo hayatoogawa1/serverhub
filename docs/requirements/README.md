@@ -2,8 +2,8 @@
 
 | ドキュメント | 内容 | 状態 |
 |---|---|---|
-| [requirements.md](requirements.md) | 要件定義書本体 | 🚧 ドラフト（1〜11 章。12〜13 章は作成中） |
-| [open-issues.md](open-issues.md) | 未決事項・確認事項の管理表 | 進行中 |
+| [requirements.md](requirements.md) | 要件定義書本体 | 🚧 全 18 章ドラフト完成（v0.9）。オーナーレビュー待ち |
+| [open-issues.md](open-issues.md) | 未決事項・確認事項の管理表 | 進行中（B/Q/F/S 系。多くは確定済み） |
 
 ## 進め方
 

@@ -41,7 +41,7 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | Frontend | React 19.2 / TypeScript 6.0.x / Vite 8.2 | |
 | | MUI 9 / React Router 7 / Axios 1.x / TanStack Query 5 | |
 | | Lint/Format | ESLint 10 flat + typescript-eslint（型情報つき）+ Prettier 3 |
-| | Node.js | 20.19 系（`.nvmrc`）。⚠️ Node 20 は EOL、24 への更新を予定 |
+| | Node.js | 24（`.nvmrc`、Active LTS） |
 | | グラフ | Recharts（**未確定**・要承認） |
 | テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | |
 | | FE: Vitest 4 / React Testing Library / MSW 2 / jsdom | |
@@ -192,15 +192,25 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 
 > 🚧 各コンポーネント追加時に追記。README.md の「よく使うコマンド」と同期する。
 
-すべてリポジトリルートから。`DC` = `docker compose --env-file .env -f infra/docker/docker-compose.yml`。
+すべてリポジトリルートから `make <target>`（`make help` で一覧）。
 
 | 目的 | コマンド |
 |---|---|
-| 開発用 DB 起動 / 停止 / 破棄 | `$DC up -d` / `$DC down` / `$DC down -v` |
-| Backend 起動 | `cd backend && ./gradlew bootRun` |
-| Backend ビルド / テスト | `cd backend && ./gradlew build` / `./gradlew test`（Docker 必須） |
+| 初回セットアップ（`.env` / git hooks / `npm ci`） | `make setup` |
+| 開発用 DB 起動 / 停止 / 作り直し | `make db-up` / `make db-down` / `make db-reset` |
+| Backend 起動 / ビルド / テスト / 整形 | `make be-run` / `make be-build` / `make be-test`（Docker 必須） / `make be-format` |
+| Frontend 開発 / チェック / ビルド / 整形 | `make fe-dev` / `make fe-check` / `make fe-build` / `make fe-format` |
+| 全チェック（push 前相当） | `make check` |
 | Flyway マイグレーション配置先 | `backend/src/main/resources/db/migration/`（`V<n>__<説明>.sql`） |
 | API ドキュメント | `http://localhost:8080/swagger-ui.html` |
+
+### 自動化（`.claude/` / `.githooks/`）
+
+- **Claude Code フック**（`.claude/settings.json`）: ファイル編集後に Frontend の変更ファイルを Prettier 整形。
+- **git pre-commit**: 変更ファイルのみ Prettier `--check` + ESLint、Java は `spotlessCheck`、`.env` 混入検知。
+- **git pre-push**: 変更のあった側の `./gradlew check` / FE の typecheck+lint+test+build（Docker 不在時は BE テストをスキップ）。
+- **GitHub Actions**（`.github/workflows/ci.yml`）: push / PR で BE `./gradlew check`（Testcontainers 含む）+ FE 全チェック。
+- **Skills**（`.claude/skills/`）: `verify`（完了前の検証手順）、`spec-sync`（コードと設計書の同期）。
 
 ---
 

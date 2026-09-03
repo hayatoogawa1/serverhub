@@ -4,6 +4,8 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     // Doma のアノテーション処理・SQL リソース配置を自動で構成する公式プラグイン
     id("org.domaframework.doma.compile") version "4.0.3"
+    // フォーマッタ（google-java-format）。`./gradlew check` で spotlessCheck も実行される
+    id("com.diffplug.spotless") version "8.10.1"
 }
 
 group = "com.serverhub"
@@ -58,4 +60,13 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+}
+
+spotless {
+    java {
+        target("src/**/*.java")
+        googleJavaFormat()
+        removeUnusedImports()
+        formatAnnotations()
+    }
 }

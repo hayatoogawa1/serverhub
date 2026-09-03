@@ -17,12 +17,12 @@ Phase 0 着手前の草案で、2026-09 時点ではいずれも数世代前。B
 | React / React DOM | **19.2** | 19 系は 2 年以上安定。MUI・Router・Query いずれも対応済み |
 | TypeScript | **~6.0.2**（6.0.x に固定） | 最新は 7.x（ネイティブ移植版）だが `typescript-eslint` の peer が `>=4.8.4 <6.1.0` のため 7.x は不可。6.0.x を採用 |
 | Vite | **8.2** | `@vitejs/plugin-react` 6.1 |
-| Node.js | **20.19 系（`.nvmrc`）** | ⚠️ Node 20 は 2026-04-30 に EOL。下記「未解決」参照 |
+| Node.js | **24（`.nvmrc`）** | Active LTS（EOL 2028-04）。当初は Node 20 だったが EOL（2026-04-30）のため 24 へ更新（本 ADR 内で対応） |
 | MUI | **@mui/material 9.4** + `@emotion/react` / `@emotion/styled` 11 | |
 | ルーティング | **react-router-dom 7.18** | SPA 用途。`createBrowserRouter` + `RouterProvider` |
 | データ取得 | **@tanstack/react-query 5.102** | queryKey は階層構造。Axios を直接呼ばず api/ 層経由 |
 | HTTP | **axios 1.20** | `apiClient`（単一インスタンス、`withCredentials: true`） |
-| テスト | **Vitest 4.1** + `@testing-library/react` 16 + `@testing-library/jest-dom` 7 + `@testing-library/user-event` 14 + **jsdom 28** | jsdom 30 は Node 22.13+ 必須のため、Node 20 でも動く 28 系に固定 |
+| テスト | **Vitest 4.1** + `@testing-library/react` 16 + `@testing-library/jest-dom` 7 + `@testing-library/user-event` 14 + **jsdom 30** | Node 24 化に伴い最新へ |
 | API モック | **MSW 2.15** | `mockServiceWorker.js` を `public/` に配置済み。テストは `msw/node` |
 | Lint | **ESLint 10 flat config** + `typescript-eslint` 8.69（型情報つき `recommendedTypeChecked` + `stylisticTypeChecked`）+ `eslint-plugin-react-hooks` 7 + `eslint-plugin-react-refresh` | Vite 8 テンプレート既定の oxlint は不採用（型認識ルールを優先）。`no-restricted-imports` で `axios` の直接 import を禁止 |
 | フォーマット | **Prettier 3.9** + `eslint-config-prettier` | semi なし / single quote / trailing comma all / printWidth 100 |
@@ -44,14 +44,17 @@ Phase 0 着手前の草案で、2026-09 時点ではいずれも数世代前。B
 - [x] `npm run build` 成功（`tsc -b` + `vite build`）
 - [x] `npm run format:check` 成功（Prettier）
 
-## 未解決 / 要対応
+## Node 24 への更新（2026-09-04、Phase 0-5 内で対応）
 
-- **Node 20 は EOL（2026-04-30）**。ローカルは `v20.19.2`。現状は動作するが、早期に
-  **Node 24（Active LTS、EOL 2028-04）** へ更新し、あわせて以下を戻す:
-  - `.nvmrc` を `24` へ
-  - `jsdom` を最新（30 系）へ
-  - `package.json` の `engines.node` を更新
-  → 別 PR で対応し、本 ADR に追記する。
+Node 20 は 2026-04-30 に EOL のため、Active LTS の **Node 24**（EOL 2028-04）へ更新した。
+
+- `.nvmrc` → `24`
+- `frontend/package.json`: `engines.node` → `>=24`、`@types/node` → `^24`、`jsdom` `^28` → `^30`
+- CI（`.github/workflows/ci.yml`）は `node-version-file: frontend/.nvmrc` を参照するため自動的に 24 になる
+
+⚠️ 開発者はローカルの Node を 24 に更新すること（`nvm install 24 && nvm use`）。
+jsdom 30 は Node 22.13+ が必須のため、Node 20 では `npm run test` が動かない。
+typecheck / lint / build は Node 20 でも動作するが、テスト実行には Node 24 が必要。
 
 ## 影響
 

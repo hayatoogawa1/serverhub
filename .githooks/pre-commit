@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# コミット前の軽量チェック（数秒で終わる範囲のみ）。
+# 重い検査（Gradle build / 全テスト）は pre-push で行う。
+#
+# 有効化: make setup  もしくは  git config core.hooksPath .githooks
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# ステージされたファイル一覧（削除は除く）
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACMR)
+[ ${#staged[@]} -eq 0 ] && exit 0
+
+fail=0
+
+# --- 秘密情報の混入チェック ---
+for f in "${staged[@]}"; do
+  case "$f" in
+    .env|.env.*)
+      [ "$f" = ".env.example" ] || { echo "✗ $f をコミットしようとしています（.env は Git 管理外）"; fail=1; }
+      ;;
+  esac
+done
+
+# --- Frontend: 変更ファイルだけ Prettier + ESLint ---
+fe_files=()
+for f in "${staged[@]}"; do
+  case "$f" in
+    frontend/*.ts|frontend/*.tsx|frontend/*.js|frontend/*.jsx|frontend/*.json|frontend/*.css|frontend/*.html|frontend/**/*.ts|frontend/**/*.tsx|frontend/**/*.js|frontend/**/*.jsx|frontend/**/*.json|frontend/**/*.css|frontend/**/*.html)
+      fe_files+=("${f#frontend/}")
+      ;;
+  esac
+done
+
+if [ ${#fe_files[@]} -gt 0 ] && [ -d frontend/node_modules ]; then
+  echo "▶ frontend: prettier --check"
+  (cd frontend && ./node_modules/.bin/prettier --check --log-level warn "${fe_files[@]}") || {
+    echo "  → 'make fe-format' で整形してください"; fail=1;
+  }
+  fe_lint_files=()
+  for f in "${fe_files[@]}"; do
+    case "$f" in *.ts|*.tsx|*.js|*.jsx) fe_lint_files+=("$f");; esac
+  done
+  if [ ${#fe_lint_files[@]} -gt 0 ]; then
+    echo "▶ frontend: eslint"
+    (cd frontend && ./node_modules/.bin/eslint --no-warn-ignored "${fe_lint_files[@]}") || fail=1
+  fi
+fi
+
+# --- Backend: 変更された Java があれば spotlessCheck（対象ファイルのみ） ---
+be_java=()
+for f in "${staged[@]}"; do
+  case "$f" in backend/*.java|backend/**/*.java) be_java+=("$f");; esac
+done
+if [ ${#be_java[@]} -gt 0 ]; then
+  echo "▶ backend: spotlessCheck"
+  ( cd backend && ./gradlew --quiet spotlessCheck ) || {
+    echo "  → 'make be-format' で整形してください"; fail=1;
+  }
+fi
+
+[ "$fail" -eq 0 ] || { echo "✗ pre-commit チェックに失敗しました"; exit 1; }
+echo "✓ pre-commit OK"

@@ -5,7 +5,7 @@ ServerHub の Frontend（React + TypeScript + Vite）。
 ## セットアップ
 
 ```bash
-nvm use            # .nvmrc（Node 20.19 系）
+nvm use            # .nvmrc（Node 24）
 npm ci
 npm run dev        # http://localhost:5173  （/api は :8080 へプロキシ）
 ```

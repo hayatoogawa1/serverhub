@@ -41,7 +41,7 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | Frontend | React 19.2 / TypeScript 6.0.x / Vite 8.2 | |
 | | MUI 9 / React Router 7 / Axios 1.x / TanStack Query 5 | |
 | | Lint/Format | ESLint 10 flat + typescript-eslint（型情報つき）+ Prettier 3 |
-| | Node.js | 20.19 系（`.nvmrc`）。⚠️ Node 20 は EOL、24 への更新を予定 |
+| | Node.js | 24（`.nvmrc`、Active LTS） |
 | | グラフ | Recharts（**未確定**・要承認） |
 | テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | |
 | | FE: Vitest 4 / React Testing Library / MSW 2 / jsdom | |

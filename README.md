@@ -41,7 +41,7 @@
 | | Axios | 1.x |
 | | TanStack Query | 5.x |
 | | Lint / Format | ESLint 10 flat + typescript-eslint / Prettier 3 |
-| | Node.js | 20.19 系（`.nvmrc`）※ Node 24 への更新を予定 |
+| | Node.js | 24（`.nvmrc`、Active LTS） |
 | | グラフ | Recharts（候補・未確定） |
 | テスト(BE) | JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | - |
 | テスト(FE) | Vitest 4 / React Testing Library / MSW 2 / jsdom | - |
@@ -82,7 +82,7 @@ serverhub/
 | ツール | バージョン | 導入方法 |
 |---|---|---|
 | Java | 17 | sdkman 等（`java -version` で確認） |
-| Node.js | 20 以上 | `.nvmrc` に準拠 |
+| Node.js | 24（Active LTS） | `.nvmrc` に準拠（`nvm install 24`） |
 | Docker Desktop | - | **WSL 2 統合を有効化**（Windows + WSL の場合） |
 
 #### Docker Desktop の WSL 2 統合（Windows + WSL 環境）
@@ -127,7 +127,7 @@ cd frontend && npm ci && npm run dev
 cd ..
 ```
 
-> Frontend の詳細は [frontend/README.md](frontend/README.md)。Node は `.nvmrc`（20.19 系）。
+> Frontend の詳細は [frontend/README.md](frontend/README.md)。Node は `.nvmrc`（24）。
 
 > `--env-file .env` を必ず付ける。`-f` で compose ファイルを指定すると `.env` の
 > 探索先が `infra/docker/` になり、ルートの `.env` が読まれないため。

@@ -33,16 +33,18 @@
 | | springdoc-openapi | 3.1.0（`springdoc-openapi-starter-webmvc-ui`） |
 | | PostgreSQL | 16 |
 | ビルド | Gradle（Kotlin DSL）＋ Wrapper | 8.14.5 |
-| Frontend | React | 18 |
-| | TypeScript | 5.x |
-| | Vite | 5.x |
-| | MUI | 5.x |
-| | React Router | 6.x |
+| Frontend | React | 19.2 |
+| | TypeScript | 6.0.x |
+| | Vite | 8.2 |
+| | MUI | 9.4 |
+| | React Router | 7.18 |
 | | Axios | 1.x |
 | | TanStack Query | 5.x |
+| | Lint / Format | ESLint 10 flat + typescript-eslint / Prettier 3 |
+| | Node.js | 20.19 系（`.nvmrc`）※ Node 24 への更新を予定 |
 | | グラフ | Recharts（候補・未確定） |
-| テスト(BE) | JUnit 5 / AssertJ / Mockito / Testcontainers | - |
-| テスト(FE) | Vitest / React Testing Library / MSW | - |
+| テスト(BE) | JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | - |
+| テスト(FE) | Vitest 4 / React Testing Library / MSW 2 / jsdom | - |
 | コンテナ | Docker / Docker Compose | - |
 | クラウド | AWS（Phase 9 で詳細化） | - |
 
@@ -119,9 +121,13 @@ cd backend && ./gradlew bootRun
 #   http://localhost:8080/swagger-ui.html   → API ドキュメント
 cd ..
 
-# 5. Frontend 起動（Phase 0-4 以降）
-#   cd frontend && npm ci && npm run dev
+# 5. Frontend 起動（Backend が起動している前提）
+cd frontend && npm ci && npm run dev
+#   http://localhost:5173   （/api リクエストは :8080 へプロキシ）
+cd ..
 ```
+
+> Frontend の詳細は [frontend/README.md](frontend/README.md)。Node は `.nvmrc`（20.19 系）。
 
 > `--env-file .env` を必ず付ける。`-f` で compose ファイルを指定すると `.env` の
 > 探索先が `infra/docker/` になり、ルートの `.env` が読まれないため。

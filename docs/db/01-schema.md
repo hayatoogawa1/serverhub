@@ -1,6 +1,6 @@
 # 01. 物理スキーマ設計
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #26）
 - 最終更新: 2026-09-05
 - 関連: [03-data-model](../design/basic/03-data-model.md)（論理設計、確定済み）/
   [01-common](../design/detail/01-common.md)・[02-auth](../design/detail/02-auth.md)・
@@ -174,7 +174,7 @@ users → tags → servers → server_tags（servers, tags 双方に依存） �
 | D-DB-03 | スキーマは `public` を使う（別スキーマを切らない） | 別スキーマを要する具体的理由がない（YAGNI） |
 | D-DB-04 | IP アドレス列はネイティブ `inet` 型を使わず `varchar(45)` のまま | 03-data-model の論理設計（文字列型）を踏襲、Phase 4 で再決定しない |
 
-- 実際の `CREATE TABLE`/`CREATE INDEX` を含む Flyway マイグレーション（`V1__init.sql`）は
-  本書確定後、別 PR で作成する。
+- 実際の `CREATE TABLE`/`CREATE INDEX` を含む Flyway マイグレーションは
+  [`backend/src/main/resources/db/migration/V1__init.sql`](../../backend/src/main/resources/db/migration/V1__init.sql)。
 - DB ユーザー分離・権限最小化（S1）は Phase 4〜5 の対象（[03-data-model §4.7](../design/basic/03-data-model.md)）。
   本書は含まない（マイグレーション実装 PR 側で検討）。

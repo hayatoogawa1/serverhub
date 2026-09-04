@@ -1470,3 +1470,4 @@ flowchart TD
 | 2026-09-04 | 1.3 | Phase 2 基本設計 [06-ui](../design/basic/06-ui.md) でグラフライブラリ Recharts を確定し §9.2（ダッシュボード出力）/ FR-COM-05 を更新（D-UI-01）。**Phase 2 基本設計 完了** |
 | 2026-09-04 | 1.4 | Phase 3 詳細設計 [01-common](../design/detail/01-common.md) で Q3（エラーコード体系: 単一フラット名前空間・命名規則・一覧の一元管理）を確定 |
 | 2026-09-05 | 1.5 | Phase 3 詳細設計 [docs/design/detail/](../design/detail/) 00〜05 全 6 文書 v1.0 確定（**Phase 3 完了**）。02-api §3.2/§3.4 を詳細設計での判断（D-SRV-04/D-MNT-02）に合わせて一部修正 |
+| 2026-09-05 | 1.6 | Phase 4 DB 設計 [docs/db/01-schema.md](../db/01-schema.md) と Flyway [`V1__init.sql`](../../backend/src/main/resources/db/migration/V1__init.sql) を確定（**Phase 4 完了**） |

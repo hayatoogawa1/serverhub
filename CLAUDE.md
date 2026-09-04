@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 3 完了。Phase 4（DB 設計）へ。各フェーズの決定に伴い随時更新する。
+> Phase 4 完了。Phase 5（Backend 実装）へ。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -188,10 +188,12 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 4（DB 設計）進行中。** 物理スキーマ設計 [docs/db/01-schema.md](docs/db/01-schema.md) は v1.0 確定（PR #26）。
-Flyway マイグレーション [`V1__init.sql`](backend/src/main/resources/db/migration/V1__init.sql) がレビュー待ち。
-マージで Phase 4 完了 → Phase 5（Backend 実装）へ。
-文書構成: 00 overview → 01 common → 02 auth → 03 server（タグ同居）→ 04 maintenance → 05 dashboard。
+**現在: Phase 4（DB 設計）完了 → Phase 5（Backend 実装）へ。**
+物理スキーマ設計 [docs/db/01-schema.md](docs/db/01-schema.md) と Flyway マイグレーション
+[`V1__init.sql`](backend/src/main/resources/db/migration/V1__init.sql) はともに v1.0 確定（PR #26〜#27、
+CI の Testcontainers で実 PostgreSQL への適用を確認済み）。
+Phase 5 は詳細設計 [docs/design/detail/](docs/design/detail/) 02〜05 の Entity/DAO/DTO/エラー設計を
+`backend/src/main/java/com/serverhub/` の実クラスに落とす（進め方は未確定 → オーナーと相談）。
 
 ---
 
@@ -240,6 +242,7 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Phase 2 基本設計 完了（00〜06 全 6 文書 v1.0）→ [docs/design/basic/](docs/design/basic/)
 - Q3（エラーコード体系: 単一フラット名前空間・UPPER_SNAKE_CASE・一覧は 01-common に一元管理）確定 → [01-common](docs/design/detail/01-common.md)（D-DETAIL-03）
 - Phase 3 詳細設計 完了（00〜05 全 6 文書 v1.0）→ [docs/design/detail/](docs/design/detail/)
+- Phase 4 DB 設計 完了（物理スキーマ設計 + Flyway `V1__init.sql`）→ [docs/db/](docs/db/)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

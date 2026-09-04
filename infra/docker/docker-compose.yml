@@ -27,8 +27,8 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # 初回起動時のみ実行される初期化スクリプト（スキーマは Flyway が管理するため、
-      # ここでは拡張・ロールなど Flyway 以前に必要なもののみ）
+      # 初回起動時のみ実行される初期化スクリプト。スキーマは Flyway が管理する。
+      # 01_seed.sql はオフラインデモ用シード（スキーマ未適用時は何もしない。詳細は initdb/README.md）。
       - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]

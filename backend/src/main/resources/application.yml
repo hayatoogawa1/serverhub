@@ -3,8 +3,10 @@ spring:
     name: serverhub
 
   datasource:
-    # 既定値は infra/docker/docker-compose.yml + .env.example のローカル開発用設定に一致。
-    # 本番など他環境では SPRING_DATASOURCE_* 環境変数で上書きする（シークレットはコミットしない）。
+    # 既定値はローカル Docker（infra/docker/docker-compose.yml + .env.example）に一致。
+    # Neon やその他の環境では SPRING_DATASOURCE_* 環境変数で上書きする
+    # （Neon は SPRING_PROFILES_ACTIVE=neon も設定。application-neon.yml / docs/adr/0003）。
+    # シークレットはコミットしない（.env は Git 管理外）。
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/serverhub}
     username: ${SPRING_DATASOURCE_USERNAME:serverhub}
     password: ${SPRING_DATASOURCE_PASSWORD:changeme}

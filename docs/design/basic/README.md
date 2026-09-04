@@ -4,6 +4,8 @@
 「どう作るか」を設計レベルで定義する。機能ごとの詳細な DTO / SQL は Phase 3、
 DB 物理設計（DDL・マイグレーション）は Phase 4。
 
+**Phase 2 完了**（2026-09-04、PR #12〜#17）。00〜06 全 6 文書 v1.0 確定。
+
 | # | ドキュメント | 内容 | 状態 |
 |---|---|---|---|
 | 00 | [00-overview.md](00-overview.md) | Phase 2 の位置づけ・入力・進め方 | ✅ 確定（v1.0） |
@@ -12,9 +14,14 @@ DB 物理設計（DDL・マイグレーション）は Phase 4。
 | 03 | [03-data-model.md](03-data-model.md) | 論理 ER 図・テーブル一覧・DB 設計方針 | ✅ 確定（v1.0、PR #14） |
 | 04 | [04-security.md](04-security.md) | 認証・認可・セキュリティ設計 | ✅ 確定（v1.0、PR #15） |
 | 05 | [05-cross-cutting.md](05-cross-cutting.md) | エラー設計・ログ設計・トランザクション方針 | ✅ 確定（v1.0、PR #16） |
-| 06 | [06-ui.md](06-ui.md) | 画面設計・フロントエンド設計 | 🚧 レビュー待ち（v1.0 ドラフト） |
+| 06 | [06-ui.md](06-ui.md) | 画面設計・フロントエンド設計 | ✅ 確定（v1.0、PR #17） |
 
 ## 進め方
 
 Phase 1 と同じサイクル（叩き台 → 採用理由/メリデメ → レビュー → 修正 → 確定）。
 確定に伴い `CLAUDE.md` の TODO と `docs/requirements/open-issues.md` を同 PR で更新する。
+
+## 次（Phase 3）
+
+詳細設計は `docs/design/detail/` に作成する（機能単位の Request/Response DTO・Entity・DAO・SQL・
+バリデーション・エラーコードの正式化（Q3））。

@@ -189,7 +189,7 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
 **現在: Phase 3（詳細設計）進行中。** Phase 2（基本設計）完了（[docs/design/basic/](docs/design/basic/) 00〜06 全 6 文書 v1.0、PR #12〜#17）。
-詳細設計は [docs/design/detail/](docs/design/detail/) に 1 文書 1 PR で作成（00-overview / 01-common 確定、02-auth レビュー中、03 以降未着手）。
+詳細設計は [docs/design/detail/](docs/design/detail/) に 1 文書 1 PR で作成（00〜02 確定、03-server レビュー中、04〜05 未着手）。
 文書構成: 00 overview → 01 common → 02 auth → 03 server（タグ同居）→ 04 maintenance → 05 dashboard。
 
 ---

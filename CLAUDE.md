@@ -189,7 +189,7 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
 **現在: Phase 2（基本設計）進行中。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
-基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00-overview / 01-architecture 確定、02-api レビュー中、03〜06 未着手）。
+基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00-overview / 01-architecture / 02-api 確定、03-data-model レビュー中、04〜06 未着手）。
 
 ---
 

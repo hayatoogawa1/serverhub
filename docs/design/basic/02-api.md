@@ -1,6 +1,6 @@
 # 02. API 一覧・API 共通仕様
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #13）
 - 最終更新: 2026-09-04
 - 関連: [00-overview](00-overview.md) / [01-architecture](01-architecture.md) / requirements [§9](../../requirements/requirements.md) / [open-issues Q2](../../requirements/open-issues.md)
 

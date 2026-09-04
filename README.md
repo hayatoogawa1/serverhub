@@ -209,7 +209,7 @@ git hooks は `make setup`（または `make hooks`）で有効化する。緊�
 | ドキュメント | 場所 | フェーズ |
 |---|---|---|
 | 要件定義書 | [docs/requirements/](docs/requirements/) | Phase 1 |
-| 基本設計書 | [docs/design/basic/](docs/design/basic/) | Phase 2（進行中） |
+| 基本設計書 | [docs/design/basic/](docs/design/basic/) | Phase 2（完了） |
 | 詳細設計書 | [docs/design/detail/](docs/design/detail/) | Phase 3 |
 | DB 設計 | [docs/db/](docs/db/) | Phase 4 |
 | ADR（設計判断ログ） | [docs/adr/](docs/adr/) | 随時 |

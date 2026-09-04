@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 2（基本設計）進行中。各フェーズの決定に伴い随時更新する。
+> Phase 2 完了。Phase 3（詳細設計）へ。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -188,9 +188,10 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 2（基本設計）最終段階。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
-基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00〜05 確定、06-ui（最終文書）レビュー中）。
-06 マージで Phase 2 完了 → Phase 3（詳細設計）へ。
+**現在: Phase 2（基本設計）完了 → Phase 3（詳細設計）へ。**
+基本設計 [docs/design/basic/](docs/design/basic/)（00〜06 全 6 文書 v1.0 確定、PR #12〜#17）。
+Phase 3 は `docs/design/detail/` に機能単位の Request/Response DTO・Entity・DAO・SQL・
+バリデーション・エラーコード正式化（Q3）を作成する（進め方は未確定 → オーナーと相談）。
 
 ---
 

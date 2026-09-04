@@ -1,6 +1,6 @@
 # 04. 認証・認可・セキュリティ設計
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #15）
 - 最終更新: 2026-09-04
 - 関連: requirements [§10.1](../../requirements/requirements.md)（セキュリティ要件、確定済み）/ [02-api](02-api.md) / [01-architecture](01-architecture.md)
 

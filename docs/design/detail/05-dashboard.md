@@ -1,6 +1,6 @@
 # 05. ダッシュボード（詳細設計）
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #24）
 - 最終更新: 2026-09-05
 - 対応: FR-DASH-01 / BR-01・09 / Q4 / F5 / UC-13 / [01-common](01-common.md) /
   [03-server](03-server.md)・[04-maintenance](04-maintenance.md)（enum・依存パターンを踏襲） /

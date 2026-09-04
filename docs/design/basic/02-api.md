@@ -1,6 +1,6 @@
 # 02. API 一覧・API 共通仕様
 
-- バージョン: 1.1（確定、PR #13。2026-09-05 詳細設計 03-server D-SRV-04 により `GET /servers/{id}` の記述を一部修正）
+- バージョン: 1.2（確定、PR #13。2026-09-05 詳細設計 03-server D-SRV-04 / 04-maintenance D-MNT-02 により一部記述を修正）
 - 最終更新: 2026-09-05
 - 関連: [00-overview](00-overview.md) / [01-architecture](01-architecture.md) / requirements [§9](../../requirements/requirements.md) / [open-issues Q2](../../requirements/open-issues.md)
 
@@ -193,7 +193,7 @@ requirements §10.1.12 の統一形式。
 | `POST` | `/servers` | 登録。サーバー + `server_tags` を 1 トランザクション。`version=0` | FR-SRV-04 / FR-TAG-01 | `201` + サーバー + `Location` | `400`（フィールド単位）、`409`（ホスト名重複）、`500`、`401` |
 | `PUT` | `/servers/{id}` | 編集（全項目 + タグ）。`version` による楽観ロック | FR-SRV-05 / FR-TAG-01 | `200` + サーバー | `400`、`409`（ホスト名重複 / `version` 不一致）、`404`（削除済み）、`401` |
 | `DELETE` | `/servers/{id}` | 論理削除（`deleted_at` 設定）。`server_tags` は物理削除 | FR-SRV-06 | `204` | `404`（不存在・既削除）、`401` |
-| `GET` | `/servers/{id}/maintenance-histories` | 当該サーバーの履歴（実施日降順、ページング可） | FR-MNT-03 | `200` + `{ content, page }` | `404`（サーバー不存在）、`401` |
+| `GET` | `/servers/{id}/maintenance-histories` | 当該サーバーの履歴（実施日降順、ページング可） | FR-MNT-03 | `200` + `{ content, page }` | `404`（サーバー不存在・削除済み、詳細設計 [04-maintenance](../detail/04-maintenance.md) D-MNT-02）、`401` |
 
 **検索クエリ（`GET /servers`、FR-SRV-02）**：`§2.5` の共通パラメータ + `keyword`（ホスト名 / IP / 用途に部分一致、`LIKE` ワイルドカードはエスケープ）、`environment`（enum・完全一致）、`status`（enum・完全一致）、`tags`（配列・指定した全タグを持つ = AND、B5）。各条件 AND、未指定は無視。
 

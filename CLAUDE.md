@@ -123,7 +123,7 @@ Page → Feature → Component
 | 409 | 一意制約違反・状態競合 |
 | 500 | 想定外のサーバーエラー（詳細はログのみ、レスポンスは汎用メッセージ） |
 
-エラーコード体系は Phase 3 で確定（**TODO**）。
+エラーコード体系は確定 → [docs/design/detail/01-common.md](docs/design/detail/01-common.md) §3。
 
 ### ログ設計
 
@@ -188,10 +188,9 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 2（基本設計）完了 → Phase 3（詳細設計）へ。**
-基本設計 [docs/design/basic/](docs/design/basic/)（00〜06 全 6 文書 v1.0 確定、PR #12〜#17）。
-Phase 3 は `docs/design/detail/` に機能単位の Request/Response DTO・Entity・DAO・SQL・
-バリデーション・エラーコード正式化（Q3）を作成する（進め方は未確定 → オーナーと相談）。
+**現在: Phase 3（詳細設計）進行中。** Phase 2（基本設計）完了（[docs/design/basic/](docs/design/basic/) 00〜06 全 6 文書 v1.0、PR #12〜#17）。
+詳細設計は [docs/design/detail/](docs/design/detail/) に 1 文書 1 PR で作成（00-overview / 01-common 確定、02-auth 以降未着手）。
+文書構成: 00 overview → 01 common → 02 auth → 03 server（タグ同居）→ 04 maintenance → 05 dashboard。
 
 ---
 
@@ -227,7 +226,6 @@ Phase 3 は `docs/design/detail/` に機能単位の Request/Response DTO・Enti
 要件レベルの未決は [docs/requirements/open-issues.md](docs/requirements/open-issues.md) で管理。
 Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
-- エラーコード体系（Q3 → Phase 3）
 - 開発 DB ポートの `127.0.0.1` バインド（S2）、セッションストア（S6）
 - Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → Phase 9）
 
@@ -238,6 +236,8 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - 開発 DB は Neon 主 + ローカル Docker フォールバック → [ADR 0003](docs/adr/0003-database-neon-with-local-docker-fallback.md)
 - Git hosting: GitHub（public, `hayatoogawa1/serverhub`）。`feature/*` → PR → 自己レビュー → `main`
 - Phase 1 要件定義 v1.0 確定（B1〜B9 / Q1・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8）→ [docs/requirements/](docs/requirements/)
+- Phase 2 基本設計 完了（00〜06 全 6 文書 v1.0）→ [docs/design/basic/](docs/design/basic/)
+- Q3（エラーコード体系: 単一フラット名前空間・UPPER_SNAKE_CASE・一覧は 01-common に一元管理）確定 → [01-common](docs/design/detail/01-common.md)（D-DETAIL-03）
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

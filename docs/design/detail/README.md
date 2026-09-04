@@ -11,8 +11,8 @@ Entity・DAO・SQL・バリデーション・エラーコードの正式化（Q3
 | 00 | [00-overview.md](00-overview.md) | Phase 3 の位置づけ・入力・範囲・Q3・文書構成 | ✅ 確定（v1.0） |
 | 01 | [01-common.md](01-common.md) | 共通 DTO 実体・共通バリデーション・エラーコード正式化（Q3） | ✅ 確定（v1.0、PR #20） |
 | 02 | [02-auth.md](02-auth.md) | 認証系 Entity/DAO/DTO・ハンドラ詳細 | ✅ 確定（v1.0、PR #21） |
-| 03 | [03-server.md](03-server.md) | サーバー・タグ Entity/DAO/SQL/DTO、タグ付け・サジェスト | 🚧 レビュー待ち（v1.0 ドラフト） |
-| 04 | maintenance | メンテナンス履歴 Entity/DAO/SQL/DTO | 未着手 |
+| 03 | [03-server.md](03-server.md) | サーバー・タグ Entity/DAO/SQL/DTO、タグ付け・サジェスト | ✅ 確定（v1.0、PR #22） |
+| 04 | [04-maintenance.md](04-maintenance.md) | メンテナンス履歴 Entity/DAO/SQL/DTO | 🚧 レビュー待ち（v1.0 ドラフト） |
 | 05 | dashboard | 集計 DAO/SQL/DTO | 未着手 |
 
 ## 進め方

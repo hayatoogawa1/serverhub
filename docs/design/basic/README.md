@@ -6,8 +6,8 @@ DB 物理設計（DDL・マイグレーション）は Phase 4。
 
 | # | ドキュメント | 内容 | 状態 |
 |---|---|---|---|
-| 00 | [00-overview.md](00-overview.md) | Phase 2 の位置づけ・入力・進め方 | 🚧 |
-| 01 | [01-architecture.md](01-architecture.md) | システム構成・アプリケーションアーキテクチャ・運用/将来拡張方針 | 🚧 |
+| 00 | [00-overview.md](00-overview.md) | Phase 2 の位置づけ・入力・進め方 | ✅ 確定（v1.0） |
+| 01 | [01-architecture.md](01-architecture.md) | システム構成・アプリケーションアーキテクチャ・運用/将来拡張方針 | ✅ 確定（v1.0） |
 | 02 | 02-api.md | API 一覧・API 共通仕様（バージョニング / エンベロープ / エラー形式） | 未着手 |
 | 03 | 03-data-model.md | 論理 ER 図・テーブル一覧・DB 設計方針 | 未着手 |
 | 04 | 04-security.md | 認証・認可・セキュリティ設計 | 未着手 |

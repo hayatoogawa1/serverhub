@@ -1,6 +1,6 @@
 # 01. 共通 DTO・共通バリデーション・エラーコード正式化（Q3）
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #20）
 - 最終更新: 2026-09-04
 - 関連: [00-overview](00-overview.md) / [02-api](../basic/02-api.md) / [03-data-model](../basic/03-data-model.md) /
   [05-cross-cutting](../basic/05-cross-cutting.md) / [open-issues Q3](../../requirements/open-issues.md)

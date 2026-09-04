@@ -188,10 +188,9 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 3（詳細設計）完了 → Phase 4（DB 設計）へ。**
-基本設計 [docs/design/basic/](docs/design/basic/)（00〜06 全 6 文書 v1.0、PR #12〜#17）、
-詳細設計 [docs/design/detail/](docs/design/detail/)（00〜05 全 6 文書 v1.0、PR #19〜#24）ともに完了。
-Phase 4 は `docs/db/` に DDL・Flyway マイグレーションを作成する（進め方は未確定 → オーナーと相談）。
+**現在: Phase 4（DB 設計）進行中。** Phase 3（詳細設計）完了（[docs/design/detail/](docs/design/detail/) 00〜05 全 6 文書 v1.0、PR #19〜#24）。
+Phase 4 は [docs/db/](docs/db/) に物理スキーマ設計（01-schema）を先に確定し、その後 Flyway
+マイグレーション（`V1__init.sql`）を別 PR で作成する（オーナー確認済み、2026-09-05）。
 文書構成: 00 overview → 01 common → 02 auth → 03 server（タグ同居）→ 04 maintenance → 05 dashboard。
 
 ---

@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> 🚧 Phase 0 進行中。各フェーズの決定に伴い随時更新する。TODO は未確定項目。
+> Phase 1 完了。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -46,7 +46,7 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | |
 | | FE: Vitest 4 / React Testing Library / MSW 2 / jsdom | |
 
-バージョン選定根拠は `docs/adr/` に記録する（[0001](docs/adr/0001-backend-technology-versions.md) BE / [0002](docs/adr/0002-frontend-technology-versions.md) FE）。
+技術判断は `docs/adr/` に記録する（[0001](docs/adr/0001-backend-technology-versions.md) BE バージョン / [0002](docs/adr/0002-frontend-technology-versions.md) FE バージョン / [0003](docs/adr/0003-database-neon-with-local-docker-fallback.md) DB）。
 
 ---
 
@@ -187,7 +187,7 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 0。**
+**現在: Phase 1 完了（要件定義 [docs/requirements/](docs/requirements/) v1.0 確定）→ Phase 2（基本設計）へ。**
 
 ---
 
@@ -220,13 +220,19 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 
 ## 11. 未確定事項（要承認）
 
-- API のバージョニング方針（`/api/v1`）とレスポンスエンベロープ形式
-- 一覧のデフォルトソート・1 ページ件数
-- サーバー属性 / メンテナンス履歴項目 / 環境・ステータス区分（B2〜B5、要件定義で叩き台 → 承認）
-- グラフライブラリ（Recharts 候補）
+要件レベルの未決は [docs/requirements/open-issues.md](docs/requirements/open-issues.md) で管理。
+Phase 1 時点で残るのは後続フェーズ確定分のみ:
+
+- API のバージョニング方針（`/api/v1`）とレスポンスエンベロープ形式（Q2 → Phase 2）
+- エラーコード体系（Q3 → Phase 3）
+- グラフライブラリ（Recharts 候補 → Phase 2/6）
+- 開発 DB ポートの `127.0.0.1` バインド（S2）、CSP 厳格度（S5 → Phase 2/3）、セッションストア（S6）
+- Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → Phase 9）
 
 ### 確定済み（履歴）
 
 - ベースパッケージ `com.serverhub`（Phase 0-3）
-- Backend バージョン一式 → [docs/adr/0001](docs/adr/0001-backend-technology-versions.md)
+- Backend / Frontend バージョン一式 → [ADR 0001](docs/adr/0001-backend-technology-versions.md) / [0002](docs/adr/0002-frontend-technology-versions.md)
+- 開発 DB は Neon 主 + ローカル Docker フォールバック → [ADR 0003](docs/adr/0003-database-neon-with-local-docker-fallback.md)
 - Git hosting: GitHub（public, `hayatoogawa1/serverhub`）。`feature/*` → PR → 自己レビュー → `main`
+- Phase 1 要件定義 v1.0 確定（B1〜B9 / Q1・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8）→ [docs/requirements/](docs/requirements/)

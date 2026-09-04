@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 1 完了。各フェーズの決定に伴い随時更新する。
+> Phase 2（基本設計）進行中。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -98,7 +98,8 @@ Page → Feature → Component
 - Java: ベースパッケージは `com.serverhub`（確定）。以下、機能別にサブパッケージを切る。クラス/メソッドは英語、意図が伝わる名前。
 - TypeScript: コンポーネント PascalCase、hook は `useXxx`、API 関数は動詞始まり（`getServers` 等）。
 - DB: テーブル・カラムは snake_case、複数形テーブル名。
-- API パス: `/api/v1/...`（**TODO: 確定**）。
+- API パス: `/api/v1/...`（URL パスバージョニング。確定 → [02-api](docs/design/basic/02-api.md)）。リソースは複数形・ケバブケース（`/servers` / `/maintenance-histories`）。
+- API レスポンス: 成功は軽量形式（単一 = 素の JSON、ページング一覧 = `{ content, page }`）。エラーは `{ code, message, traceId (+ errors[]) }`。JSON キーは `camelCase`、日時は ISO 8601。
 - queryKey: 階層構造（例 `['servers', 'list', params]` / `['servers', 'detail', id]`）。
 
 ### 禁止事項
@@ -187,7 +188,8 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 1 完了（要件定義 [docs/requirements/](docs/requirements/) v1.0 確定）→ Phase 2（基本設計）へ。**
+**現在: Phase 2（基本設計）進行中。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
+基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00-overview / 01-architecture 確定、02-api レビュー中、03〜06 未着手）。
 
 ---
 
@@ -223,7 +225,6 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 要件レベルの未決は [docs/requirements/open-issues.md](docs/requirements/open-issues.md) で管理。
 Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
-- API のバージョニング方針（`/api/v1`）とレスポンスエンベロープ形式（Q2 → Phase 2）
 - エラーコード体系（Q3 → Phase 3）
 - グラフライブラリ（Recharts 候補 → Phase 2/6）
 - 開発 DB ポートの `127.0.0.1` バインド（S2）、CSP 厳格度（S5 → Phase 2/3）、セッションストア（S6）
@@ -236,3 +237,5 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - 開発 DB は Neon 主 + ローカル Docker フォールバック → [ADR 0003](docs/adr/0003-database-neon-with-local-docker-fallback.md)
 - Git hosting: GitHub（public, `hayatoogawa1/serverhub`）。`feature/*` → PR → 自己レビュー → `main`
 - Phase 1 要件定義 v1.0 確定（B1〜B9 / Q1・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8）→ [docs/requirements/](docs/requirements/)
+- Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
+- Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）

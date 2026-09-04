@@ -1,3 +1,0 @@
-# Flyway マイグレーション SQL の置き場（classpath:db/migration）。
-# 命名規則: V<連番>__<説明>.sql（例: V1__create_users.sql）
-# 実際のスキーマ定義は Phase 4（DB 設計）以降で追加する。

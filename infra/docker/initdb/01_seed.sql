@@ -9,7 +9,7 @@
 -- 方針:
 --   - 実在しないダミーデータのみ（本物のホスト名・IP・認証情報は含めない）。
 --   - 冪等（ON CONFLICT DO NOTHING / WHERE NOT EXISTS）。何度実行しても安全。
---   - カラム名は要件定義 B3 / B4 に基づく想定。Phase 4 の物理設計で確定後、必要なら本ファイルを更新する。
+--   - カラム名は Phase 4 物理設計（docs/db/01-schema.md）/ V1__init.sql と整合確認済み。
 --   - デモユーザーのパスワードは "password"（bcrypt ハッシュ）。デモ専用。
 
 \set ON_ERROR_STOP on

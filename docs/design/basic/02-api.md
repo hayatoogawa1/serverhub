@@ -1,7 +1,7 @@
 # 02. API 一覧・API 共通仕様
 
-- バージョン: 1.0（確定、PR #13）
-- 最終更新: 2026-09-04
+- バージョン: 1.1（確定、PR #13。2026-09-05 詳細設計 03-server D-SRV-04 により `GET /servers/{id}` の記述を一部修正）
+- 最終更新: 2026-09-05
 - 関連: [00-overview](00-overview.md) / [01-architecture](01-architecture.md) / requirements [§9](../../requirements/requirements.md) / [open-issues Q2](../../requirements/open-issues.md)
 
 本書は **API の契約（どんなエンドポイントが・どんな形で応答するか）** を基本設計レベルで定義する。
@@ -189,7 +189,7 @@ requirements §10.1.12 の統一形式。
 | メソッド | パス | 概要 | FR | 成功 | 主なエラー |
 |---|---|---|---|---|---|
 | `GET` | `/servers` | 一覧・検索・絞り込み・ソート・ページング。`deleted_at IS NULL` のみ | FR-SRV-01 / 02 | `200` + `{ content, page }` | `400`（不正な `sort` / enum フィルタ値）、`401` |
-| `GET` | `/servers/{id}` | 詳細。全属性 + タグ + 直近のメンテナンス履歴 + `version` | FR-SRV-03 | `200` + サーバー | `400`（ID 形式）、`404`（不存在・削除済み）、`401` |
+| `GET` | `/servers/{id}` | 詳細。全属性 + タグ + `version`（メンテナンス履歴は含まない。直近分は `/servers/{id}/maintenance-histories` を小さい `size` で呼ぶ、詳細設計 [03-server](../detail/03-server.md) D-SRV-04） | FR-SRV-03 | `200` + サーバー | `400`（ID 形式）、`404`（不存在・削除済み）、`401` |
 | `POST` | `/servers` | 登録。サーバー + `server_tags` を 1 トランザクション。`version=0` | FR-SRV-04 / FR-TAG-01 | `201` + サーバー + `Location` | `400`（フィールド単位）、`409`（ホスト名重複）、`500`、`401` |
 | `PUT` | `/servers/{id}` | 編集（全項目 + タグ）。`version` による楽観ロック | FR-SRV-05 / FR-TAG-01 | `200` + サーバー | `400`、`409`（ホスト名重複 / `version` 不一致）、`404`（削除済み）、`401` |
 | `DELETE` | `/servers/{id}` | 論理削除（`deleted_at` 設定）。`server_tags` は物理削除 | FR-SRV-06 | `204` | `404`（不存在・既削除）、`401` |

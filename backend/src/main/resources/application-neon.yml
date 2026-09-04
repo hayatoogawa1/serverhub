@@ -1,0 +1,14 @@
+# Neon（クラウド PostgreSQL）接続時の追加設定。
+# 有効化: .env に SPRING_PROFILES_ACTIVE=neon と SPRING_DATASOURCE_* を設定する。
+# 接続 URL・認証情報は環境変数から与える（ここには書かない）。docs/adr/0003 参照。
+
+spring:
+  datasource:
+    hikari:
+      # Neon は接続数に上限があり、無操作でオートサスペンドする。
+      # プールは小さめ、接続の寿命はオートサスペンド（既定 5 分）より短くする。
+      maximum-pool-size: 5
+      minimum-idle: 1
+      max-lifetime: 240000 # 4 分
+      keepalive-time: 120000 # 2 分ごとに生存確認
+      connection-timeout: 20000

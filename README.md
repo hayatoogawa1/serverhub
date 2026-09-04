@@ -31,7 +31,7 @@
 | | Doma | doma-processor 3.11.1 / doma-spring-boot-starter 3.0.0 |
 | | Flyway | Spring Boot 管理バージョン（`spring-boot-starter-flyway` + `flyway-database-postgresql`） |
 | | springdoc-openapi | 3.1.0（`springdoc-openapi-starter-webmvc-ui`） |
-| | PostgreSQL | 16 |
+| | PostgreSQL | Neon（クラウド、主）/ Docker `postgres:16-alpine`（ローカル・オフライン用） |
 | ビルド | Gradle（Kotlin DSL）＋ Wrapper | 8.14.5 |
 | Frontend | React | 19.2 |
 | | TypeScript | 6.0.x |
@@ -96,6 +96,15 @@ serverhub/
    docker compose version
    ```
 
+### DB 構成（Neon / ローカル Docker）
+
+DB は環境変数で接続先を切り替える（[docs/adr/0003](docs/adr/0003-database-neon-with-local-docker-fallback.md)）。
+
+| 系統 | 用途 | 切り替え |
+|---|---|---|
+| **Neon**（クラウド PostgreSQL） | 通常開発・機能検証（DB ブランチ活用） | `.env` に `SPRING_PROFILES_ACTIVE=neon` と `SPRING_DATASOURCE_*`（`?sslmode=require` 付き URL）を設定 |
+| **ローカル Docker**（`postgres:16-alpine`） | **既定**。オフラインデモ、CI、Neon を使わない場合 | 何も設定しない（`.env.example` のまま）。`make db-up` で起動 |
+
 ### セットアップ手順
 
 > 🚧 Phase 0 進行中。Backend/Frontend は各コンポーネント追加時に追記する。
@@ -103,54 +112,45 @@ serverhub/
 すべてリポジトリルートで実行する。
 
 ```bash
-# 1. リポジトリ取得
+# 1. リポジトリ取得 & 初回セットアップ
 git clone https://github.com/<owner>/serverhub.git serverhub && cd serverhub
+make setup           # .env 作成 / git hooks 有効化 / フロント依存インストール
 
-# 2. 環境変数ファイルを作成（.env は Git 管理外）
-cp .env.example .env
-#   → .env を編集。ローカルに別の PostgreSQL が動いている場合は DB_PORT を変更する。
+# 2. DB を用意する（どちらか）
+#   2a. Neon を使う（通常）: .env の NEON ブロックを有効化し接続情報を設定
+#   2b. ローカル Docker を使う（オフライン / 既定）:
+make db-up
+#      healthy 確認: docker compose --env-file .env -f infra/docker/docker-compose.yml ps
 
-# 3. 開発用 DB 起動
-docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
-#   起動確認（healthy になるまで待つ）:
-docker compose --env-file .env -f infra/docker/docker-compose.yml ps
-
-# 4. Backend 起動（DB が起動している前提）
-cd backend && ./gradlew bootRun
+# 3. Backend 起動（.env の接続先を使用）
+make be-run
 #   http://localhost:8080/actuator/health   → {"status":"UP"}
 #   http://localhost:8080/swagger-ui.html   → API ドキュメント
-cd ..
+
+# 4. （ローカル Docker のみ）オフラインデモ用シードを投入
+make db-seed
+#   ログイン: admin@serverhub.local / password
 
 # 5. Frontend 起動（Backend が起動している前提）
-cd frontend && npm ci && npm run dev
+make fe-dev
 #   http://localhost:5173   （/api リクエストは :8080 へプロキシ）
-cd ..
 ```
 
 > Frontend の詳細は [frontend/README.md](frontend/README.md)。Node は `.nvmrc`（24）。
 
-> `--env-file .env` を必ず付ける。`-f` で compose ファイルを指定すると `.env` の
-> 探索先が `infra/docker/` になり、ルートの `.env` が読まれないため。
-
-> Backend は `.env` を直接読まない。既定値（`localhost:5432` / `serverhub` / `changeme`）は
-> `.env.example` と一致させてあるので、既定のまま `docker compose` を起動していれば
-> `./gradlew bootRun` はそのまま繋がる。DB 接続情報を変えた場合は
-> `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`
-> を環境変数で渡す。
+> Backend は `make be-run` 経由だと `.env` を読み込んでから起動する。直接
+> `./gradlew bootRun` する場合は `SPRING_DATASOURCE_*` を自分でエクスポートする。
+> 何も設定しなければ `application.yml` の既定値（`localhost:5432` / `serverhub` / `changeme`、
+> `.env.example` と一致）でローカル Docker に繋がる。
 
 ### DB の初期化
 
-- **スキーマ（テーブル等）**: Flyway で管理する（Phase 4 以降。Backend 起動時に自動適用予定）。
-- **初回起動時のみの初期化**（拡張の有効化・ロール作成など）: `infra/docker/initdb/` に
-  `*.sql` / `*.sh` を置く。データボリュームが空のときだけ実行される。詳細は
-  [infra/docker/initdb/README.md](infra/docker/initdb/README.md)。
-- **シードデータ（ログインユーザー等）**: Flyway のシード用マイグレーションで投入予定（Phase 4〜5 で確定）。
-- **DB を完全に作り直す**:
-
-  ```bash
-  docker compose --env-file .env -f infra/docker/docker-compose.yml down -v
-  docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
-  ```
+- **スキーマ（テーブル等）**: Flyway で管理する（Neon / ローカルとも同じ。Backend 起動時に自動適用予定）。
+- **オフラインデモ用シードデータ**（デモユーザー・サーバー・タグ・履歴）:
+  `infra/docker/initdb/01_seed.sql`。Flyway 適用後に `make db-seed` で投入する（冪等）。
+  詳細は [infra/docker/initdb/README.md](infra/docker/initdb/README.md)。
+- **Flyway 以前に必要な初期化**（拡張・低権限ロール等）: `infra/docker/initdb/` に `*.sql` を追加。
+- **ローカル DB を完全に作り直す**: `make db-reset` → その後 `make be-run` → `make db-seed`。
 
 ### DB への接続確認
 
@@ -168,9 +168,11 @@ docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 | 目的 | コマンド | 生のコマンド |
 |---|---|---|
 | 初回セットアップ | `make setup` | `.env` 作成 + git hooks 有効化 + `npm ci` |
-| DB 起動 / 停止 / 作り直し | `make db-up` / `make db-down` / `make db-reset` | `docker compose --env-file .env -f infra/docker/docker-compose.yml ...` |
+| ローカル DB 起動 / 停止 / 作り直し | `make db-up` / `make db-down` / `make db-reset` | `docker compose --env-file .env -f infra/docker/docker-compose.yml ...` |
+| オフラインデモ用シード投入 | `make db-seed` | `psql < infra/docker/initdb/01_seed.sql`（Flyway 適用後） |
+| オフラインデモ準備（手順表示） | `make demo` | `db-up` + 手順の案内 |
 | DB へ psql 接続 | `make db-psql` | `docker exec -it serverhub-db psql ...` |
-| Backend 起動 | `make be-run` | `cd backend && ./gradlew bootRun` |
+| Backend 起動 | `make be-run` | `.env` を読み込んで `./gradlew bootRun` |
 | Backend ビルド / テスト / 整形 | `make be-build` / `make be-test` / `make be-format` | `./gradlew build -x test` / `test` / `spotlessApply` |
 | Frontend 開発サーバー | `make fe-dev` | `cd frontend && npm run dev` |
 | Frontend チェック / ビルド / 整形 | `make fe-check` / `make fe-build` / `make fe-format` | typecheck+lint+format+test / build / prettier |

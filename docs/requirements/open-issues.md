@@ -29,6 +29,8 @@
 | F5 | 要件 | メンテナンス実施日に未来日を許容するか / ダッシュボードのタグ別表示件数 | 実施日は未来日も許容。ダッシュボードのタグ別は上位 10 件 + 「その他」 | **確定**（2026-09-04） | requirements.md §9.2 FR-MNT-02 / FR-DASH-01 |
 | F6 | 要件/UI | サーバー・メンテナンス履歴の登録／編集をモーダルにするかページにするか | モーダル（一覧・詳細から画面遷移せずに操作、保存後に再取得）。項目数が多く画面が窮屈ならページに切替 | 要承認（Phase 2 で確定可） | requirements.md §13.1 SC-05/06/08 |
 | F7 | 要件/UI | レスポンシブ対応の範囲 | PC 利用前提。タブレット幅（〜768px 程度）までレイアウトが崩れない程度に留め、スマホ最適化は対象外 | 要承認 | requirements.md §13.3 |
+| N1 | インフラ/CI | Neon ブランチを PR ごとに作成して CI で使うワークフロー | 将来対応。`NEON_API_KEY` / `NEON_PROJECT_ID` を GitHub Actions Secrets に登録し `neondatabase/create-branch-action` 等を使う。現状 CI は Testcontainers で Neon 非依存 | 将来（要承認） | [ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md) |
+| N2 | インフラ | 本番 DB を Neon 継続にするか AWS RDS にするか | Phase 9 で判断。どちらでも接続は環境変数で切替 | 保留（Phase 9） | [ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md) |
 | S1 | セキュリティ/設計 | DB の管理ユーザーとアプリ接続ユーザーの分離、アプリユーザーの権限最小化を MVP で実装するか Phase 4〜5 に回すか | Phase 4（DB 設計）〜5（Backend 実装）で対応。`initdb/` でアプリ用ロール（対象スキーマの DML のみ + `ALTER DEFAULT PRIVILEGES`）を作成、Flyway/管理は別権限 | **確定**（2026-09-04） | Phase 4〜5 で対応。最終的にアプリユーザーの DB 権限を最小限にする |
 | S2 | セキュリティ | 開発 DB（docker compose）の公開ポートを `127.0.0.1` バインドに限定するか | `ports` を `127.0.0.1:${DB_PORT}:5432` にする。WSL/他ツールからの接続要件があれば緩和。影響小のため MVP で対応可 | 要承認 | requirements.md §10.1.15、infra/docker/docker-compose.yml |
 | S3 | セキュリティ | ログイン試行のブルートフォース対策（アカウントロック / レート制限）を MVP で入れるか | MVP はログイン失敗ログのみ。アカウントロック・レート制限は将来対応 | **確定**（2026-09-04） | MVP は失敗ログまで。ロック/レート制限は将来対応。残存リスクは §10.1.2 に明記 |

@@ -36,7 +36,7 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | | Doma | doma-processor 3.11.1 + doma-spring-boot-starter 3.0.0 + doma compile plugin 4.0.3 |
 | | マイグレーション | Flyway（`spring-boot-starter-flyway` + `flyway-database-postgresql`） |
 | | API ドキュメント | springdoc-openapi-starter-webmvc-ui 3.1.0（コードファースト） |
-| | DB | PostgreSQL 16 |
+| | DB | Neon（クラウド PostgreSQL、通常開発）/ Docker `postgres:16-alpine`（オフライン・CI）。切替は環境変数 → [ADR 0003](docs/adr/0003-database-neon-with-local-docker-fallback.md) |
 | | ビルド | Gradle 8.14.5（Kotlin DSL）+ Wrapper |
 | Frontend | React 19.2 / TypeScript 6.0.x / Vite 8.2 | |
 | | MUI 9 / React Router 7 / Axios 1.x / TanStack Query 5 | |
@@ -200,7 +200,8 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 | 目的 | コマンド |
 |---|---|
 | 初回セットアップ（`.env` / git hooks / `npm ci`） | `make setup` |
-| 開発用 DB 起動 / 停止 / 作り直し | `make db-up` / `make db-down` / `make db-reset` |
+| DB: 通常は Neon（`.env` に `SPRING_PROFILES_ACTIVE=neon` + `SPRING_DATASOURCE_*`）。オフラインはローカル Docker | [ADR 0003](docs/adr/0003-database-neon-with-local-docker-fallback.md) |
+| ローカル DB 起動 / 停止 / 作り直し / シード | `make db-up` / `make db-down` / `make db-reset` / `make db-seed` |
 | Backend 起動 / ビルド / テスト / 整形 | `make be-run` / `make be-build` / `make be-test`（Docker 必須） / `make be-format` |
 | Frontend 開発 / チェック / ビルド / 整形 | `make fe-dev` / `make fe-check` / `make fe-build` / `make fe-format` |
 | 全チェック（push 前相当） | `make check` |

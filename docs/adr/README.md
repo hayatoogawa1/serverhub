@@ -10,3 +10,4 @@
 |---|---|---|
 | [0001](0001-backend-technology-versions.md) | Backend の技術スタックとバージョン確定 | Accepted |
 | [0002](0002-frontend-technology-versions.md) | Frontend の技術スタックとバージョン確定 | Accepted |
+| [0003](0003-database-neon-with-local-docker-fallback.md) | 開発 DB は Neon 主 + ローカル Docker フォールバック | Accepted |

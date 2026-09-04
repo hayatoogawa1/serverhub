@@ -585,7 +585,7 @@ flowchart TD
 - **概要**: 認証を要する全 API・画面で、未認証アクセスを Backend で遮断する（横断）。
 - **処理・業務ルール**:
   - 業務 API は `SecurityFilterChain` で `authenticated()`。未認証は `401`。
-  - 未認証で許可するのは: ログイン、静的アセット、`/actuator/health`、API ドキュメント（Swagger）。
+  - 未認証で許可するのは: ログイン、静的アセット、`/actuator/health`、API ドキュメント（Swagger、**開発環境のみ**。本番は認証必須。基本設計 [04-security](../design/basic/04-security.md) D-SEC-02 で確定）。
   - Frontend のルートガードは UX 目的であり、アクセス制御の実体は Backend（§10.1.5）。
 - **エラー**: 未認証の API → `401`。Frontend は 401 を検知してログイン画面へ誘導し、可能なら元の遷移先を保持。
 
@@ -1058,7 +1058,7 @@ Spring Security で設定可能なヘッダーのうち、**Frontend / Swagger U
 | `X-Frame-Options: DENY`（または `frame-ancestors 'none'`） | **採用** | クリックジャッキング対策。ServerHub を iframe 埋め込みしない前提 |
 | `Referrer-Policy: strict-origin-when-cross-origin` | **採用** | URL 経由の情報漏洩抑止 |
 | `Strict-Transport-Security`（HSTS） | **本番のみ採用** | HTTPS 強制。開発（localhost/HTTP）では付与しない（10.1.14、環境差異） |
-| `Content-Security-Policy` | **MVP は最小限 / 設計のみ** | 厳格な CSP は Swagger UI・MUI・Vite の inline style / script と競合しやすい。MVP は `default-src 'self'` ベースに必要な緩和（`style-src 'self' 'unsafe-inline'` 等）を明示した緩めの CSP から始め、Swagger を別パスに隔離しつつ段階的に厳格化。確定は Phase 2/3（open-issues S5） |
+| `Content-Security-Policy` | **採用（緩め・enforce）** | `script-src 'self'`（inline 不可）+ `style-src 'self' 'unsafe-inline'`（MUI/emotion 対応）を中心とした緩めの CSP を enforce。Swagger は別パスで緩和版 CSP に隔離。**確定 → 基本設計 [04-security](../design/basic/04-security.md) D-SEC-01/03**（2026-09-04、S5） |
 | `Permissions-Policy` | 任意 | 使わない機能（カメラ等）を無効化。低リスクなら採用 |
 
 採用したヘッダーと設定値・理由は Phase 2 の「セキュリティ設計」に記載する。
@@ -1466,3 +1466,4 @@ flowchart TD
 | 2026-09-04 | 0.9 | 開発 DB を Neon（主）+ ローカル Docker（オフライン）のハイブリッドに（[ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md)）。§6.2 / §10.3 / §12.5 / §15 / RK-09 を更新 |
 | 2026-09-04 | **1.0** | F6（登録/編集はモーダル）/ F7（PC 専用）/ Q1（パスワード変更・リセットは MVP 対象外）/ Q4（最近のメンテナンス 直近 10 件）/ Q5（タグは自由入力 + サジェスト、専用管理画面なし）を確定。§7 As-Is は一般的想定として受諾。**Phase 1 要件定義を確定** |
 | 2026-09-04 | 1.1 | Phase 2 基本設計 [02-api](../design/basic/02-api.md) で Q2（API バージョニング `/api/v1` + 軽量レスポンス形式）を確定。§9 / FR-SRV-02 / §10.1.6 のページサイズ範囲外時の扱い（既定値に丸める）を確定し記述差を解消 |
+| 2026-09-04 | 1.2 | Phase 2 基本設計 [04-security](../design/basic/04-security.md) で S5（CSP は緩め・enforce）を確定し §10.1.13 を更新。Swagger UI の公開範囲を「開発のみ未認証・本番は認証必須」に確定し FR-AUTH-03 を更新（D-SEC-02） |

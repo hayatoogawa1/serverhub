@@ -189,7 +189,7 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
 **現在: Phase 2（基本設計）進行中。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
-基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00-overview / 01-architecture / 02-api 確定、03-data-model レビュー中、04〜06 未着手）。
+基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00〜03 確定、04-security レビュー中、05〜06 未着手）。
 
 ---
 
@@ -227,7 +227,7 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
 - エラーコード体系（Q3 → Phase 3）
 - グラフライブラリ（Recharts 候補 → Phase 2/6）
-- 開発 DB ポートの `127.0.0.1` バインド（S2）、CSP 厳格度（S5 → Phase 2/3）、セッションストア（S6）
+- 開発 DB ポートの `127.0.0.1` バインド（S2）、セッションストア（S6）
 - Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → Phase 9）
 
 ### 確定済み（履歴）
@@ -239,3 +239,5 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Phase 1 要件定義 v1.0 確定（B1〜B9 / Q1・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8）→ [docs/requirements/](docs/requirements/)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
+- Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)
+- S5（CSP は緩め・enforce。Swagger UI は開発のみ未認証・本番は認証必須）確定 → [04-security](docs/design/basic/04-security.md)（D-SEC-01〜06）

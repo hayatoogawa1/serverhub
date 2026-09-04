@@ -3,13 +3,13 @@
 要件定義〜設計で確定させるべき事項の一覧。確定したら「状態」を `確定` にし、
 本文（requirements.md 等）へ反映して決定内容・日付を記録する。
 
-**状況**: B1〜B9 / Q1・Q2・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8 を確定。
+**状況**: B1〜B9 / Q1・Q2・Q4〜Q8 / F1〜F7 / S1・S3・S4・S5・S7・S8 を確定。
 残るのは後続フェーズで確定する項目のみ:
 
 - **Q2**（API バージョニング / エンベロープ）→ **確定**（2026-09-04、基本設計 [02-api](../design/basic/02-api.md)）
 - **Q3**（エラーコード体系）→ Phase 3
 - **S2**（開発 DB ポートの `127.0.0.1` バインド）→ 後続で確定
-- **S5**（CSP 厳格度）→ Phase 2/3、**S6**（セッションストア）→ 可用性設計時
+- **S5**（CSP 厳格度）→ **確定**（2026-09-04、基本設計 [04-security](../design/basic/04-security.md)）、**S6**（セッションストア）→ 可用性設計時
 - **N1**（Neon ブランチ CI）→ 将来、**N2**（本番 DB は Neon か RDS）→ Phase 9
 
 | ID | 区分 | 論点 | Claude の叩き台 / 推奨 | 状態 | 決定・メモ |
@@ -44,7 +44,7 @@
 | S2 | セキュリティ | 開発 DB（docker compose）の公開ポートを `127.0.0.1` バインドに限定するか | `ports` を `127.0.0.1:${DB_PORT}:5432` にする。WSL/他ツールからの接続要件があれば緩和。影響小のため MVP で対応可 | 要承認 | requirements.md §10.1.15、infra/docker/docker-compose.yml |
 | S3 | セキュリティ | ログイン試行のブルートフォース対策（アカウントロック / レート制限）を MVP で入れるか | MVP はログイン失敗ログのみ。アカウントロック・レート制限は将来対応 | **確定**（2026-09-04） | MVP は失敗ログまで。ロック/レート制限は将来対応。残存リスクは §10.1.2 に明記 |
 | S4 | セキュリティ | セッションのアイドルタイムアウト時間 | 30 分（`server.servlet.session.timeout=30m`）。「最後の API リクエストから 30 分間リクエストがなければセッション無効化・再ログイン要求」 | **確定**（2026-09-04） | 30 分で確定。SPA 背景リクエストによる延命は S8 |
-| S5 | セキュリティ | Content-Security-Policy をどこまで厳格にするか | MVP は `default-src 'self'` ベースの緩め（`style-src` に `'unsafe-inline'` 許容等）から開始し、Swagger UI を隔離しつつ Phase 2/3 で段階的に厳格化。厳格 CSP は MUI/Swagger/Vite と競合しやすい | 保留（Phase 2/3） | requirements.md §10.1.13 |
+| S5 | セキュリティ | Content-Security-Policy をどこまで厳格にするか | 緩め・enforce で開始。`script-src 'self'`（inline 不可）+ `style-src 'self' 'unsafe-inline'`（MUI/emotion 対応）。Swagger UI は別パスに隔離し緩和版 CSP。nonce 化・Report-Only は不採用、Phase 6 で再評価 | **確定**（2026-09-04） | requirements.md §10.1.13、基本設計 [04-security](../design/basic/04-security.md) D-SEC-01/03 |
 | S6 | セキュリティ/非機能 | セッションストア（インメモリ or 外部ストア） | MVP は単一インスタンス前提でインメモリ。スケールアウト時に Redis 等へ。可用性・性能（10.2/10.3）と合わせて確定 | 保留 | requirements.md §10.1.3 |
 | S7 | セキュリティ/設計 | `application.yml` に DB 接続の既定値（`changeme` 等）を残すか、環境変数必須にするか | 開発用の安全なダミー既定値は設定してよい。実際の秘密情報は絶対に含めない。本番は環境変数 / AWS Secrets Manager 等 | **確定**（2026-09-04） | ダミー既定値は許容。[ADR 0001](../adr/0001-backend-technology-versions.md) の現状方針を維持 |
 | S8 | セキュリティ/設計 | SPA の背景リクエスト（TanStack Query の `refetchInterval` 等）がセッションのアイドルタイムアウトをリセットし、意図せずセッションが延命される | MVP では `refetchInterval` を持つクエリを作らない方針とする。厳密な「最終操作時刻」管理が必要になった場合は別途検討 | 設計時の留意点 | requirements.md §10.1.3 |

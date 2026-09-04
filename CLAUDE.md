@@ -42,7 +42,7 @@ CSV インポート/エクスポート、操作ログ、権限管理（ロール
 | | MUI 9 / React Router 7 / Axios 1.x / TanStack Query 5 | |
 | | Lint/Format | ESLint 10 flat + typescript-eslint（型情報つき）+ Prettier 3 |
 | | Node.js | 24（`.nvmrc`、Active LTS） |
-| | グラフ | Recharts（**未確定**・要承認） |
+| | グラフ | Recharts（確定 → [06-ui](docs/design/basic/06-ui.md) D-UI-01） |
 | テスト | BE: JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | |
 | | FE: Vitest 4 / React Testing Library / MSW 2 / jsdom | |
 
@@ -188,8 +188,9 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 2（基本設計）進行中。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
-基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00〜04 確定、05-cross-cutting レビュー中、06 未着手）。
+**現在: Phase 2（基本設計）最終段階。** Phase 1（要件定義 [docs/requirements/](docs/requirements/) v1.0）完了。
+基本設計は [docs/design/basic/](docs/design/basic/) に 1 文書 1 PR で作成（00〜05 確定、06-ui（最終文書）レビュー中）。
+06 マージで Phase 2 完了 → Phase 3（詳細設計）へ。
 
 ---
 
@@ -226,7 +227,6 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
 - エラーコード体系（Q3 → Phase 3）
-- グラフライブラリ（Recharts 候補 → Phase 2/6）
 - 開発 DB ポートの `127.0.0.1` バインド（S2）、セッションストア（S6）
 - Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → Phase 9）
 

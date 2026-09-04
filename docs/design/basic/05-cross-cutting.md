@@ -1,6 +1,6 @@
 # 05. エラー設計・ログ設計・トランザクション方針
 
-- バージョン: 1.0（ドラフト・レビュー待ち）
+- バージョン: 1.0（確定、PR #16）
 - 最終更新: 2026-09-04
 - 関連: requirements [§10.1.11/§10.1.12](../../requirements/requirements.md)（ログ・エラー、確定済み）/
   [§10.5](../../requirements/requirements.md)（可観測性）/ [02-api](02-api.md) / [01-architecture](01-architecture.md) §2.1

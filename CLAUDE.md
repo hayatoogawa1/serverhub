@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 2 完了。Phase 3（詳細設計）へ。各フェーズの決定に伴い随時更新する。
+> Phase 3 完了。Phase 4（DB 設計）へ。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -188,8 +188,10 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 3（詳細設計）進行中。** Phase 2（基本設計）完了（[docs/design/basic/](docs/design/basic/) 00〜06 全 6 文書 v1.0、PR #12〜#17）。
-詳細設計は [docs/design/detail/](docs/design/detail/) に 1 文書 1 PR で作成（00〜04 確定、05-dashboard（最終文書）レビュー中）。05 マージで Phase 3 完了。
+**現在: Phase 3（詳細設計）完了 → Phase 4（DB 設計）へ。**
+基本設計 [docs/design/basic/](docs/design/basic/)（00〜06 全 6 文書 v1.0、PR #12〜#17）、
+詳細設計 [docs/design/detail/](docs/design/detail/)（00〜05 全 6 文書 v1.0、PR #19〜#24）ともに完了。
+Phase 4 は `docs/db/` に DDL・Flyway マイグレーションを作成する（進め方は未確定 → オーナーと相談）。
 文書構成: 00 overview → 01 common → 02 auth → 03 server（タグ同居）→ 04 maintenance → 05 dashboard。
 
 ---
@@ -238,6 +240,7 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Phase 1 要件定義 v1.0 確定（B1〜B9 / Q1・Q4〜Q8 / F1〜F7 / S1・S3・S4・S7・S8）→ [docs/requirements/](docs/requirements/)
 - Phase 2 基本設計 完了（00〜06 全 6 文書 v1.0）→ [docs/design/basic/](docs/design/basic/)
 - Q3（エラーコード体系: 単一フラット名前空間・UPPER_SNAKE_CASE・一覧は 01-common に一元管理）確定 → [01-common](docs/design/detail/01-common.md)（D-DETAIL-03）
+- Phase 3 詳細設計 完了（00〜05 全 6 文書 v1.0）→ [docs/design/detail/](docs/design/detail/)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

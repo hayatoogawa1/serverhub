@@ -5,7 +5,7 @@
 管理対象サーバーの情報とメンテナンス情報を一元管理し、検索・確認・更新・履歴確認などの
 運用業務を効率化することを目的とする。ポートフォリオ用途も兼ねる。
 
-> 開発中（Phase 1 要件定義完了 → Phase 2 基本設計へ）。記載内容は各フェーズの進行に伴い更新されます。
+> 開発中（Phase 3 詳細設計完了 → Phase 4 DB 設計へ）。記載内容は各フェーズの進行に伴い更新されます。
 > 要件は [docs/requirements/](docs/requirements/)、設計判断は [docs/adr/](docs/adr/) を参照。
 
 ---
@@ -210,7 +210,7 @@ git hooks は `make setup`（または `make hooks`）で有効化する。緊�
 |---|---|---|
 | 要件定義書 | [docs/requirements/](docs/requirements/) | Phase 1 |
 | 基本設計書 | [docs/design/basic/](docs/design/basic/) | Phase 2（完了） |
-| 詳細設計書 | [docs/design/detail/](docs/design/detail/) | Phase 3 |
+| 詳細設計書 | [docs/design/detail/](docs/design/detail/) | Phase 3（完了） |
 | DB 設計 | [docs/db/](docs/db/) | Phase 4 |
 | ADR（設計判断ログ） | [docs/adr/](docs/adr/) | 随時 |
 | API 仕様（Swagger UI） | `http://localhost:8080/swagger-ui.html`（起動後） | Phase 5 以降 |

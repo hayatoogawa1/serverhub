@@ -1469,3 +1469,4 @@ flowchart TD
 | 2026-09-04 | 1.2 | Phase 2 基本設計 [04-security](../design/basic/04-security.md) で S5（CSP は緩め・enforce）を確定し §10.1.13 を更新。Swagger UI の公開範囲を「開発のみ未認証・本番は認証必須」に確定し FR-AUTH-03 を更新（D-SEC-02） |
 | 2026-09-04 | 1.3 | Phase 2 基本設計 [06-ui](../design/basic/06-ui.md) でグラフライブラリ Recharts を確定し §9.2（ダッシュボード出力）/ FR-COM-05 を更新（D-UI-01）。**Phase 2 基本設計 完了** |
 | 2026-09-04 | 1.4 | Phase 3 詳細設計 [01-common](../design/detail/01-common.md) で Q3（エラーコード体系: 単一フラット名前空間・命名規則・一覧の一元管理）を確定 |
+| 2026-09-05 | 1.5 | Phase 3 詳細設計 [docs/design/detail/](../design/detail/) 00〜05 全 6 文書 v1.0 確定（**Phase 3 完了**）。02-api §3.2/§3.4 を詳細設計での判断（D-SRV-04/D-MNT-02）に合わせて一部修正 |

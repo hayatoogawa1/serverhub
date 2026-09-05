@@ -23,6 +23,10 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -106,13 +110,26 @@ public class SecurityConfig {
       ApiLogoutSuccessHandler apiLogoutSuccessHandler)
       throws Exception {
 
+    // AbstractAuthenticationProcessingFilter は既定で RequestAttributeSecurityContextRepository
+    // （リクエスト単位のみ・セッション非対応）を持つ。.formLogin(...) DSL 経由であれば
+    // フレームワークが自動でセッション対応版に差し替えるが、本フィルタは手動生成のため
+    // 自動では差し替わらず、ログイン成功がセッションに永続化されない（結合テストで
+    // 「ログイン後の /me が401」として顕在化）。SecurityContextHolderFilter が実際に参照する
+    // のと同じ SecurityContextRepository を明示的に共有する。
+    SecurityContextRepository securityContextRepository =
+        new DelegatingSecurityContextRepository(
+            new RequestAttributeSecurityContextRepository(),
+            new HttpSessionSecurityContextRepository());
+
     JsonLoginAuthenticationFilter loginFilter =
         new JsonLoginAuthenticationFilter(objectMapper, validator);
     loginFilter.setAuthenticationManager(authenticationManager);
     loginFilter.setAuthenticationSuccessHandler(loginSuccessHandler);
     loginFilter.setAuthenticationFailureHandler(loginFailureHandler);
+    loginFilter.setSecurityContextRepository(securityContextRepository);
 
-    http.authorizeHttpRequests(
+    http.securityContext(context -> context.securityContextRepository(securityContextRepository))
+        .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login")
                     .permitAll()

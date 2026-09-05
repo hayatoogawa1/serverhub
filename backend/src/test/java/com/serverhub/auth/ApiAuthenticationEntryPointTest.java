@@ -2,13 +2,13 @@ package com.serverhub.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverhub.common.error.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import tools.jackson.databind.ObjectMapper;
 
 class ApiAuthenticationEntryPointTest {
 

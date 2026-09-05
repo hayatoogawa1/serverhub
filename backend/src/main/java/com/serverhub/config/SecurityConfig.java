@@ -1,6 +1,5 @@
 package com.serverhub.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverhub.auth.ApiAuthenticationEntryPoint;
 import com.serverhub.auth.ApiLogoutSuccessHandler;
 import com.serverhub.auth.CsrfCookieFilter;
@@ -26,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * 認証・認可・セキュリティヘッダーの設定（詳細設計 04-security）。

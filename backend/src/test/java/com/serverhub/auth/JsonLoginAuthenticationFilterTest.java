@@ -7,7 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverhub.common.error.ErrorCode;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -22,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * {@link JsonLoginAuthenticationFilter} が FR-AUTH-01 の 400（未入力・形式）/401（資格情報不正）を 正しく作り分けることを確認する。

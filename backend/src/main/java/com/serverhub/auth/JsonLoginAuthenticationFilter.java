@@ -1,6 +1,5 @@
 package com.serverhub.auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverhub.common.error.ApiError;
 import com.serverhub.common.error.FieldError;
 import com.serverhub.common.web.RequestLoggingFilter;
@@ -18,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * ログインを JSON ボディ（{@code { "email": "...", "password": "..." }}）で受け付ける（詳細設計 02-auth §3.3
@@ -72,9 +73,11 @@ public class JsonLoginAuthenticationFilter extends UsernamePasswordAuthenticatio
     try {
       LoginRequest parsed = objectMapper.readValue(request.getInputStream(), LoginRequest.class);
       return parsed != null ? parsed : new LoginRequest(null, null);
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       // 不正な JSON は空のリクエストとして扱い、後続の Bean Validation で 400 にする
       // （資格情報の失敗と区別するため、ここでは AuthenticationException を投げない）。
+      // Jackson 3 の解析エラー（JacksonException）は RuntimeException 系で IOException を
+      // 継承しないため、明示的に catch する（実装時に判明）。
       return new LoginRequest(null, null);
     }
   }

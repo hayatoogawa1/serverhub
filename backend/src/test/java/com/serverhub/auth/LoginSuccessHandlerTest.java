@@ -4,13 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverhub.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import tools.jackson.databind.ObjectMapper;
 
 class LoginSuccessHandlerTest {
 

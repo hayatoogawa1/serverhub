@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
@@ -70,11 +71,14 @@ class AuthIntegrationTest {
             .andExpect(jsonPath("$.displayName").value("デモ管理者"))
             .andReturn();
 
-    Cookie sessionCookie = loginResult.getResponse().getCookie("JSESSIONID");
-    assertThat(sessionCookie).isNotNull();
+    // MockMvc は実サーブレットコンテナを持たないため JSESSIONID Cookie は発行されない。
+    // 同一セッションを引き継ぐには MockHttpSession をそのまま次のリクエストへ渡す
+    // （MockMvc でセッションを跨ぐ標準的な方法。当初 Cookie 経由で試みたが機能しなかった）。
+    MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+    assertThat(session).as("login should establish a session").isNotNull();
 
     mockMvc
-        .perform(get("/api/v1/auth/me").cookie(sessionCookie))
+        .perform(get("/api/v1/auth/me").session(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.email").value("admin@serverhub.local"));
   }
@@ -147,17 +151,17 @@ class AuthIntegrationTest {
                     .header("X-XSRF-TOKEN", csrfCookie.getValue()))
             .andExpect(status().isOk())
             .andReturn();
-    Cookie sessionCookie = loginResult.getResponse().getCookie("JSESSIONID");
+    MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+    assertThat(session).as("login should establish a session").isNotNull();
 
     mockMvc
         .perform(
             post("/api/v1/auth/logout")
-                .cookie(sessionCookie, csrfCookie)
+                .session(session)
+                .cookie(csrfCookie)
                 .header("X-XSRF-TOKEN", csrfCookie.getValue()))
         .andExpect(status().isNoContent());
 
-    mockMvc
-        .perform(get("/api/v1/auth/me").cookie(sessionCookie))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/v1/auth/me").session(session)).andExpect(status().isUnauthorized());
   }
 }

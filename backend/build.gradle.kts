@@ -65,6 +65,8 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+    // enum ⇔ DB 文字列変換（D-DETAIL-04）。一覧は DomainConvertersProvider を参照
+    options.compilerArgs.add("-Adoma.domain.converters=com.serverhub.common.domain.DomainConvertersProvider")
 }
 
 spotless {

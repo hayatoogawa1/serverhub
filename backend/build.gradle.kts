@@ -31,6 +31,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // --- 入力値検証（既存ライブラリを優先、requirements §10.1.1）。IP アドレス形式チェックに使用 ---
+    implementation("commons-validator:commons-validator:1.9.0")
+
     // --- DB / マイグレーション ---
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
@@ -45,6 +48,8 @@ dependencies {
 
     // --- テスト ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // Spring Boot 4 でモジュール化され、@WebMvcTest 等は starter-test に含まれない
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.security:spring-security-test")
     // Testcontainers 2.x はモジュール名が testcontainers-* にリネームされている

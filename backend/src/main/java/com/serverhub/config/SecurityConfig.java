@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -117,7 +118,15 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
-        .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+        .csrf(
+            csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    // Spring Security 6 既定の XorCsrfTokenRequestAttributeHandler は
+                    // レンダリングのたびにトークンをマスクするため、SPA が Cookie の値をそのまま
+                    // ヘッダーへコピーする単純な方式（本設計）とは相性が悪い（値が一致せず 403 に
+                    // なる、結合テストで判明）。マスクしない CsrfTokenRequestAttributeHandler を
+                    // 明示的に使う（Spring Security 公式ドキュメントの SPA + Cookie 向け推奨設定）。
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
         .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
         .logout(

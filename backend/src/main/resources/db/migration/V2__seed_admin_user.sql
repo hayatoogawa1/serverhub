@@ -8,8 +8,11 @@
 -- `{bcrypt}` プレフィックスは Spring Security の DelegatingPasswordEncoder が
 -- エンコード方式を識別するために必須（無いと "no password encoding prefix" で認証時に例外、
 -- 結合テストで判明）。
+-- このハッシュは Python の bcrypt.checkpw(b"password", hash) で "password" と一致することを
+-- 確認済み（旧ハッシュは一致しないダミー値だったため、結合テストで実際にログインを試して判明・
+-- 再生成した）。
 INSERT INTO users (email, password_hash, display_name)
 VALUES ('admin@serverhub.local',
-        '{bcrypt}$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '{bcrypt}$2a$10$VSgzUF8bjIqoiGs9fixqWuurGeiY.k9x8Hrgv9ta3ELs7aZDRUGiS',
         'デモ管理者')
 ON CONFLICT (email) DO NOTHING;

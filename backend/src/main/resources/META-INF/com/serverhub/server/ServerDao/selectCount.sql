@@ -4,6 +4,7 @@ where s.deleted_at is null
 /*%if criteria.keyword != null && !criteria.keyword.isEmpty() */
   and (
     s.hostname like /* @infix(criteria.keyword) */'x' escape '$'
+    or s.ip_address like /* @infix(criteria.keyword) */'x' escape '$'
     or s.description like /* @infix(criteria.keyword) */'x' escape '$'
   )
 /*%end*/

@@ -8,6 +8,7 @@ import org.seasar.doma.jdbc.OptimisticLockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -90,9 +91,11 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
   }
 
-  @ExceptionHandler(OptimisticLockException.class)
-  public ResponseEntity<ApiError> handleOptimisticLock(OptimisticLockException ex) {
-    // Doma が @Version 不一致（影響行 0 件）で自動的に送出する（05-cross-cutting §1.2）。
+  @ExceptionHandler({OptimisticLockException.class, OptimisticLockingFailureException.class})
+  public ResponseEntity<ApiError> handleOptimisticLock(Exception ex) {
+    // Doma が @Version 不一致（影響行 0 件）で送出する（05-cross-cutting §1.2）。
+    // doma-spring-boot の例外変換が有効なため、実行時は Spring の
+    // OptimisticLockingFailureException に変換されて届く。両方を受ける。
     log.warn("optimistic lock conflict: {}", ex.getMessage());
     ApiError body =
         ApiError.of(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, "他の操作と競合しました。最新の内容を確認してください。", traceId());

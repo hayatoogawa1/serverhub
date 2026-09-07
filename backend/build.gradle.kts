@@ -23,6 +23,7 @@ repositories {
 
 extra["domaVersion"] = "3.11.1"          // doma-spring-boot-starter 3.0.0 が想定するバージョンに合わせる
 extra["springdocVersion"] = "3.1.0"
+extra["awsSdkVersion"] = "2.54.13"       // AWS SDK v2 BOM。EC2 実行状態の参照のみ（FR-CLOUD-01 / 07-aws-ec2-integration）
 
 dependencies {
     // --- Spring Boot ---
@@ -45,6 +46,12 @@ dependencies {
 
     // --- API ドキュメント ---
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${property("springdocVersion")}")
+
+    // --- AWS（EC2 実行状態の "参照" のみ。書き込み API は使わない、07-aws-ec2-integration §8） ---
+    implementation(platform("software.amazon.awssdk:bom:${property("awsSdkVersion")}"))
+    implementation("software.amazon.awssdk:ec2")
+    // 低ボリュームの同期ポーリング用に軽量な HTTP クライアント（netty を避ける）
+    implementation("software.amazon.awssdk:url-connection-client")
 
     // --- テスト ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -30,6 +30,18 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# AWS EC2 実行状態の参照（FR-CLOUD-01、07-aws-ec2-integration §6.4）。
+# 既定は無効。ローカル・CI は false のまま（AWS を一切呼ばない）。
+# 本番で有効化するときは SERVERHUB_CLOUD_ENABLED=true + IAM ロール（静的キーは持たない、§8）。
+serverhub:
+  cloud:
+    enabled: ${SERVERHUB_CLOUD_ENABLED:false}
+    poll-interval: PT5M
+    staleness-threshold: PT15M
+    aws:
+      region: ${SERVERHUB_CLOUD_AWS_REGION:ap-northeast-1}
+      batch-size: 100
+
 management:
   endpoints:
     web:

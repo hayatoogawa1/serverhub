@@ -287,12 +287,23 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   マルチステージビルド・非 root・ヘルスチェック。`make app-up` でフルスタック起動 → ローカルで
   ログイン〜CRUD〜dashboard の疎通を確認済み。`.gitattributes` で `gradlew`/`*.sh`/`Dockerfile`/`.env*` を
   LF 固定（CRLF だと docker build / compose が壊れる）→ [ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)。**Phase 8 完了（#46）**
-- Phase 9 AWS: 最重要要件は **AWS EC2 実行状態の参照**（FR-CLOUD-01）。設計レビュー用ドキュメント
-  [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md) を作成（DB `V3 server_cloud_links` /
-  API サブリソース `/servers/{id}/cloud-link` + `cloudLink` レスポンス追加 / Backend `com.serverhub.cloud`
-  パッケージ + `@Scheduled` ポーラー + AWS SDK v2 / FE `CloudStateChip` + 明細の分離表示 / IAM は
-  `ec2:DescribeInstances` のみ・IAM ロール）。**§12 の論点をオーナーがレビュー確定 → 実装 PR 9-1〜9-6**。
-  `servers.status` は不変。既存テスト維持
+- Phase 9 AWS: 最重要要件は **AWS EC2 実行状態の参照**（FR-CLOUD-01）。設計は
+  [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)（**PR #47 で確定**、論点 P1〜P15 承認）。
+  実装 PR 9-1〜9-6:
+  - **9-1**: DB `V3__cloud_links.sql`（`server_cloud_links`）+ `ServerCloudLink` Entity/Listener/`ServerCloudLinkDao` +
+    `CloudProvider`/`CloudInstanceState` enum + Converter（`DomainConvertersProvider` に登録）。
+    Testcontainers DAO テスト。BE 89 → 102（+13）。既存不変。
+  - 9-2: `CloudStateProvider` interface + `Ec2*Impl` + `Disabled*Impl` + `@Scheduled` ポーラー + AWS SDK v2 +
+    `serverhub.cloud.*`（既定 `enabled=false`）
+  - 9-3: `CloudLinkController` + `CloudLinkServiceImpl` + `PUT/DELETE /servers/{id}/cloud-link` + `refresh`（200）+
+    `cloudLink` を `ServerDetailResponse`、`cloudState`/`cloudStateFetchedAt` を `ServerSummaryResponse` に追加
+    （`ServerServiceImpl` で合成、一覧は `selectByServerIds` で N+1 回避）+ `409 CLOUD_LINK_CONFLICT`
+  - 9-4: FE `types/cloud` `api/cloud` `hooks/cloud` `CloudStateChip` + `ServerDetailView` の分離表示 + `CloudLinkFormModal`
+  - 9-5: FE 一覧 AWS 列 + MSW + 仕上げ
+  - 9-6: AWS IAM ポリシー文書 + デプロイ手順
+  不変条件: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は `ec2:DescribeInstances` のみ・
+  静的キー非保存・ローカル/CI は `enabled=false`・AWS 障害時も台帳画面は動く・FE から AWS を直接呼ばない・
+  既存 BE 89 / FE 123 を壊さない
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

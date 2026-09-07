@@ -13,6 +13,8 @@ import org.seasar.doma.DomainConverters;
   EnvironmentConverter.class,
   StatusConverter.class,
   VirtualizationTypeConverter.class,
-  MaintenanceTypeConverter.class
+  MaintenanceTypeConverter.class,
+  CloudProviderConverter.class,
+  CloudInstanceStateConverter.class
 })
 public class DomainConvertersProvider {}

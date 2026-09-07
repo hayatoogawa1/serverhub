@@ -54,21 +54,101 @@ export const maintenanceHistoriesFixture: MaintenanceHistoryDetail[] = [
   },
 ]
 
+type MutationOutcome = 'success' | 'duplicate-hostname' | 'optimistic-lock' | 'validation' | 'error'
+
 interface ServerHandlerOptions {
   summaries?: ServerSummary[]
   detail?: ServerDetail
   histories?: MaintenanceHistoryDetail[]
   /** 詳細を 404 にする。 */
   detailNotFound?: boolean
+  /** POST /servers の結果。 */
+  createOutcome?: MutationOutcome
+  /** PUT /servers/:id の結果。 */
+  updateOutcome?: MutationOutcome
+  /** DELETE /servers/:id の結果。 */
+  deleteOutcome?: 'success' | 'not-found' | 'error'
+  /** POST / DELETE の呼び出しを記録する（テストで検証）。 */
+  spy?: { create?: unknown; update?: unknown; deleteCalled?: boolean }
 }
 
-/** サーバー一覧 / 詳細 / 履歴の MSW ハンドラ（テストで `server.use(...serverHandlers({...}))`）。 */
+function mutationError(outcome: Exclude<MutationOutcome, 'success'>) {
+  switch (outcome) {
+    case 'duplicate-hostname':
+      return HttpResponse.json(
+        {
+          code: 'DUPLICATE_HOSTNAME',
+          message: '同じホスト名のサーバーが既に存在します。',
+          traceId: 't',
+        },
+        { status: 409 },
+      )
+    case 'optimistic-lock':
+      return HttpResponse.json(
+        {
+          code: 'OPTIMISTIC_LOCK_CONFLICT',
+          message: '他の操作と競合しました。最新の内容を確認してください。',
+          traceId: 't',
+        },
+        { status: 409 },
+      )
+    case 'validation':
+      return HttpResponse.json(
+        {
+          code: 'VALIDATION_ERROR',
+          message: '入力内容を確認してください。',
+          traceId: 't',
+          errors: [{ field: 'hostname', message: 'ホスト名の形式が正しくありません。' }],
+        },
+        { status: 400 },
+      )
+    default:
+      return HttpResponse.json(
+        { code: 'INTERNAL_ERROR', message: 'システムエラーが発生しました。', traceId: 't' },
+        { status: 500 },
+      )
+  }
+}
+
+/** サーバー一覧 / 詳細 / 履歴 / 登録 / 編集 / 削除の MSW ハンドラ。 */
 export function serverHandlers(opts: ServerHandlerOptions = {}) {
   const summaries = opts.summaries ?? serverSummariesFixture
   const detail = opts.detail ?? serverDetailFixture
   const histories = opts.histories ?? maintenanceHistoriesFixture
 
   return [
+    http.post(`${API}/servers`, async ({ request }) => {
+      const body = await request.json()
+      if (opts.spy) opts.spy.create = body
+      if (opts.createOutcome && opts.createOutcome !== 'success') {
+        return mutationError(opts.createOutcome)
+      }
+      return HttpResponse.json({ ...detail, ...(body as object), id: 99 }, { status: 201 })
+    }),
+    http.put(`${API}/servers/:id`, async ({ request }) => {
+      const body = await request.json()
+      if (opts.spy) opts.spy.update = body
+      if (opts.updateOutcome && opts.updateOutcome !== 'success') {
+        return mutationError(opts.updateOutcome)
+      }
+      return HttpResponse.json({ ...detail, ...(body as object) })
+    }),
+    http.delete(`${API}/servers/:id`, () => {
+      if (opts.spy) opts.spy.deleteCalled = true
+      if (opts.deleteOutcome === 'not-found') {
+        return HttpResponse.json(
+          { code: 'RESOURCE_NOT_FOUND', message: '対象が見つかりません。', traceId: 't' },
+          { status: 404 },
+        )
+      }
+      if (opts.deleteOutcome === 'error') {
+        return HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: 'システムエラーが発生しました。', traceId: 't' },
+          { status: 500 },
+        )
+      }
+      return new HttpResponse(null, { status: 204 })
+    }),
     http.get(`${API}/servers`, ({ request }) => {
       const url = new URL(request.url)
       const size = Number(url.searchParams.get('size') ?? '20')

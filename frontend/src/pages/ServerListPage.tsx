@@ -1,11 +1,14 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import LinearProgress from '@mui/material/LinearProgress'
+import AddIcon from '@mui/icons-material/Add'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { Pagination } from '@/components/Pagination'
 import { StatePlaceholder } from '@/components/StatePlaceholder'
+import { useFeedback } from '@/components/feedback/context'
+import { ServerFormModal } from '@/features/servers/components/ServerFormModal'
 import { ServerListTable } from '@/features/servers/components/ServerListTable'
 import { useServersQuery } from '@/features/servers/hooks'
 import {
@@ -18,9 +21,11 @@ import { ServerSearchBar } from '@/features/servers/components/ServerSearchBar'
 /** SC-03 サーバー一覧（検索・絞り込み・ソート・ページング、URL クエリ同期）。 */
 export function ServerListPage() {
   const navigate = useNavigate()
+  const feedback = useFeedback()
   const [searchParams, setSearchParams] = useSearchParams()
   const params = useMemo(() => parseServerListParams(searchParams), [searchParams])
   const query = useServersQuery(params)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const hasFilters =
     params.q !== '' || params.env !== 'all' || params.status !== 'all' || params.tags.length > 0
@@ -51,7 +56,7 @@ export function ServerListPage() {
         title="サーバー"
         breadcrumbs={[{ label: 'サーバー' }]}
         actions={
-          <Button variant="contained" disabled>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
             新規登録
           </Button>
         }
@@ -101,6 +106,18 @@ export function ServerListPage() {
           </>
         )}
       </Box>
+
+      {createOpen && (
+        <ServerFormModal
+          mode="create"
+          onClose={() => setCreateOpen(false)}
+          onCreated={(created) => {
+            setCreateOpen(false)
+            feedback.showSuccess(`サーバー「${created.hostname}」を登録しました`)
+            void navigate(`/servers/${created.id}`)
+          }}
+        />
+      )}
     </>
   )
 }

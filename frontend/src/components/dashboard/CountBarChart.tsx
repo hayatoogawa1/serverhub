@@ -38,20 +38,10 @@ export function CountBarChart({ data, onBarClick, height = 220, ariaLabel }: Cou
   return (
     <Box sx={{ width: '100%', height }} role="img" aria-label={ariaLabel}>
       <ResponsiveContainer>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 4, right: 32, bottom: 4, left: 8 }}
-        >
+        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 32, bottom: 4, left: 8 }}>
           <CartesianGrid horizontal={false} stroke={theme.palette.divider} />
           <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
-          <YAxis
-            type="category"
-            dataKey="label"
-            width={110}
-            tick={{ fontSize: 12 }}
-            interval={0}
-          />
+          <YAxis type="category" dataKey="label" width={110} tick={{ fontSize: 12 }} interval={0} />
           <Tooltip
             cursor={{ fill: theme.palette.action.hover }}
             formatter={(value) => [`${String(value)} 台`, '']}

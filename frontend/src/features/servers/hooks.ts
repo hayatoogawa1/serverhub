@@ -17,10 +17,11 @@ export function useServersQuery(params: ServerListParams) {
 }
 
 /** SC-04 詳細。`version` を含み、編集フォームの初期値にも使う。 */
-export function useServerQuery(id: number) {
+export function useServerQuery(id: number, enabled = true) {
   return useQuery<ServerDetail, ApiError>({
     queryKey: queryKeys.servers.detail(id),
     queryFn: () => getServer(id),
+    enabled: enabled && id > 0,
     retry: (failureCount, error) => error.status !== 404 && failureCount < 1,
   })
 }

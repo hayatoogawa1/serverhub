@@ -4,22 +4,35 @@ import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import AddIcon from '@mui/icons-material/Add'
 import { DataTable, type Column } from '@/components/DataTable'
 import { Pagination } from '@/components/Pagination'
 import { StatePlaceholder } from '@/components/StatePlaceholder'
+import { useFeedback } from '@/components/feedback/context'
 import { MAINTENANCE_TYPE_LABELS } from '@/types/domain'
 import { formatDate, orDash } from '@/utils/format'
+import { MaintenanceHistoryFormModal } from './MaintenanceHistoryFormModal'
 import { useServerMaintenanceHistoriesQuery } from '../hooks'
 import type { MaintenanceHistoryDetail } from '../types'
 
 const SIZE = 10
 
+interface ServerMaintenanceHistorySectionProps {
+  serverId: number
+  serverHostname: string
+}
+
 /**
  * SC-04 内のメンテナンス履歴セクション（FR-MNT-03、`GET /servers/{id}/maintenance-histories`）。
- * FE-2 では表示のみ。登録は FE-4 で追加する。
+ * 表示 + このサーバーを対象にした履歴登録（SC-08）。
  */
-export function ServerMaintenanceHistorySection({ serverId }: { serverId: number }) {
+export function ServerMaintenanceHistorySection({
+  serverId,
+  serverHostname,
+}: ServerMaintenanceHistorySectionProps) {
+  const feedback = useFeedback()
   const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
   const query = useServerMaintenanceHistoriesQuery(serverId, page, SIZE)
 
   const columns: Column<MaintenanceHistoryDetail>[] = [
@@ -65,6 +78,15 @@ export function ServerMaintenanceHistorySection({ serverId }: { serverId: number
           メンテナンス履歴
         </Typography>
         {query.data && <Chip size="small" label={`${total} 件`} />}
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateOpen(true)}
+        >
+          履歴を登録
+        </Button>
       </Stack>
 
       {query.isError && query.error.status !== 401 ? (
@@ -101,6 +123,18 @@ export function ServerMaintenanceHistorySection({ serverId }: { serverId: number
             />
           )}
         </>
+      )}
+
+      {createOpen && (
+        <MaintenanceHistoryFormModal
+          fixedServerId={serverId}
+          fixedServerHostname={serverHostname}
+          onClose={() => setCreateOpen(false)}
+          onCreated={() => {
+            setCreateOpen(false)
+            feedback.showSuccess('メンテナンス履歴を記録しました')
+          }}
+        />
       )}
     </Box>
   )

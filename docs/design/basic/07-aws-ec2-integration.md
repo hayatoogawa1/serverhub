@@ -1,10 +1,13 @@
 # 07. AWS EC2 実行状態の参照（Phase 9 設計）
 
-- ステータス: **レビュー中（未確定）**。本 PR は設計レビュー用。実装はレビュー確定後。
+- ステータス: **設計確定（2026-09-08、PR #47 でオーナー承認）**。§3 の論点 P1〜P15 は推奨案どおり確定。
+  実装は PR 9-1〜9-6（§11）。
 - 対応: 新規要件 FR-CLOUD-01（[requirements §9.2](../../requirements/requirements.md)）/ [open-issues E2](../../requirements/open-issues.md)
 - 前提調査: [探索: AWS EC2 連携影響調査](../exploration/01-aws-ec2-integration-impact.md)
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
+
+> **実装進捗**: 9-1（DB `V3 server_cloud_links` + `ServerCloudLink` Entity/DAO + `CloudProvider`/`CloudInstanceState` enum + Converter）実装中。
 
 ---
 
@@ -55,11 +58,20 @@ AWS コンソール / API で EC2 を停止したら、ServerHub の当該サー
 
 ---
 
-## 3. Phase 9 で確定すべき設計論点
+## 3. 設計論点（すべて確定）
 
-探索ドキュメント §7 の 6 点 + 本設計で顕在化した論点。**推奨案**を提示するので、レビューで確定する。
+**2026-09-08、PR #47 でオーナー承認。P1〜P15 は下表の「推奨」どおり確定。** さらに以下を確定事項として明記:
 
-| # | 論点 | 選択肢 | 推奨 |
+- **P7**: cloud-link はサブリソースとして分離（`PUT/DELETE /servers/{id}/cloud-link`）。
+- **P8**: `refresh` は HTTP 200。AWS 取得失敗時も最後の成功値・`stateFetchedAt`・`lastError` を返す。
+- **P10**: サーバー論理削除後も cloud link は DB 上に保持する。
+- EC2 インスタンス ID の競合は **`409 CLOUD_LINK_CONFLICT`**（新コード）。
+- レスポンス合成は当面 `ServerServiceImpl` に置く。Assembler は新設しない。
+- サーバー一覧レスポンスに `cloudState` / `cloudStateFetchedAt` を追加。一覧取得で N+1 を出さず一括取得する。
+- リージョンは当面 `ap-northeast-1` で固定。
+- PR 分割は 9-1〜9-6（§11）を採用。
+
+| # | 論点 | 選択肢 | 確定（= 推奨） |
 |---|---|---|---|
 | P1 | 紐付けの持ち方 | (a) 別テーブル `server_cloud_links` / (b) `servers` にフラット列追加 | **(a)**。`servers` の楽観ロック・監査列を汚さない。ポーラーの書き込み経路を隔離（C2） |
 | P2 | 実行状態の取得方式 | (a) 表示時ライブ取得 / (b) DB キャッシュ + 定期ポーリング / (c) b + 明細の手動更新 | **(c)**。一覧・ダッシュボードはキャッシュ、明細に「今すぐ更新」 |
@@ -121,11 +133,15 @@ CREATE INDEX ix_server_cloud_links_poll ON server_cloud_links (state_fetched_at)
 ### 4.2 命名・型の方針（[03-data-model §4](03-data-model.md) 準拠）
 
 - `snake_case`・複数形テーブル名・`bigint identity` 代理キー・監査列 `created_at`/`updated_at`。
-- enum は `varchar` + `CHECK`（`provider`）。`state` は CHECK を付けず正規化ロジックで担保
-  （provider 追加時に CHECK を毎回いじらないため。生値は `state_raw`）。
-- 日時は `timestamptz`（UTC 保持、API は ISO 8601 + オフセット）。
+- enum は `varchar` + `CHECK`。`provider` は `IN ('aws_ec2')`。`state` も正規化値集合
+  （`running`/`stopped`/`pending`/`stopping`/`terminated`/`unknown`/`gone`）で `CHECK` する
+  — この集合は provider 非依存で固定なので、他 provider を足しても変わらない
+  （03-data-model D-DATA-04「enum は varchar + CHECK」に合わせた。9-1 実装時に決定）。生値は `state_raw`。
+  Java 側は `fromValue` が未知値を `UNKNOWN` に落とすので、将来 CHECK 外の値が来ても機能は止まらない。
+- 日時は `timestamptz`（UTC 保持、API は ISO 8601 + オフセット）。`state` の DB マッピングは
+  `CloudInstanceStateConverter`、`provider` は `CloudProviderConverter`（`DomainConvertersProvider` に登録、D-DETAIL-04）。
 
-### 4.3 [03-data-model](03-data-model.md) への反映
+### 4.3 [03-data-model](03-data-model.md) への反映（9-1 で実施済み）
 
 §1 の ER 図に `servers ||--o| server_cloud_links` を追加、§2 テーブル一覧に 1 行追加、§5 の
 「クラウド連携」行を「Phase 9 で実装」に更新。
@@ -428,11 +444,21 @@ ServerHub が使う IAM ポリシー（読み取り専用）:
 
 ---
 
-## 12. レビューで決めてほしいこと（サマリ）
+## 12. レビュー結果（2026-09-08、PR #47 承認）
 
-1. §3 の論点 P1〜P15 の推奨案でよいか（特に P7 サブリソース分離、P8 refresh は 200、P10 リンクを残す）。
-2. §5.2 の重複エラーは `409 CLOUD_LINK_CONFLICT`（新コード）か `400 VALIDATION_ERROR` か。
-3. §6.2 の enrichment を `ServerServiceImpl` に置くか `ServerResponseAssembler` を新設するか。
-4. §5.1 一覧レスポンスに `cloudState` を足してよいか（一覧クエリに一括取得を 1 本追加する）。
-5. リージョンは単一（`ap-northeast-1`）で確定してよいか。
-6. §11 の PR 分割でよいか。
+すべて確定。
+
+1. §3 の論点 P1〜P15 → **推奨案どおり採用**（P7 サブリソース分離 / P8 refresh は 200 / P10 リンクを残す を含む）。
+2. §5.2 の重複エラー → **`409 CLOUD_LINK_CONFLICT`**（新コード）。
+3. §6.2 の enrichment → **当面 `ServerServiceImpl`**。Assembler は新設しない。
+4. §5.1 一覧レスポンスに `cloudState` / `cloudStateFetchedAt` → **追加する**。N+1 を出さず一括取得。
+5. リージョン → **当面 `ap-northeast-1` で固定**。
+6. §11 の PR 分割（9-1〜9-6）→ **採用**。
+
+### 追加の絶対条件（オーナー指示、実装で厳守）
+
+`servers.status` / `Status` enum は一切変更しない。AWS state と管理 status は別物。AWS → ServerHub の
+**取得のみ**（`StartInstances`/`StopInstances`/`TerminateInstances` 等の書き込み API は禁止）。IAM は
+`ec2:DescribeInstances` のみ。静的 AWS アクセスキーを DB・ソースコードに保存しない。ローカル/CI は
+`enabled=false` + Fake/Disabled provider。AWS 障害時も一覧・詳細・Dashboard は利用可能。FE から AWS API を
+直接呼ばない。既存 BE 89 / FE 123 のテストを壊さない。MVP 既存機能を破壊しない。

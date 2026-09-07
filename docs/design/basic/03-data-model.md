@@ -22,6 +22,7 @@ erDiagram
   servers ||--o{ maintenance_histories : "対象"
   servers ||--o{ server_tags : ""
   tags ||--o{ server_tags : ""
+  servers ||--o| server_cloud_links : "AWS EC2 等（Phase 9 / FR-CLOUD-01）"
 
   users {
     bigint id PK
@@ -86,6 +87,7 @@ erDiagram
 | `tags` | 分類ラベル（全サーバー共有） | 代理キー `id` | 物理削除しない（未参照でも保持、F2） | なし | B5 / Q5 / F2 |
 | `server_tags` | サーバー ⇔ タグ 多対多 | **複合キー** `(server_id, tag_id)` | **物理削除** | なし | requirements §12.1 / `CLAUDE.md` §3 |
 | `maintenance_histories` | 特定サーバーへの保守作業 1 件 | 代理キー `id` | スキーマ上 `deleted_at` を持つが **UI からは削除しない**（登録・参照のみ、B4 / BR-06） | なし（追記のみ） | B4 |
+| `server_cloud_links` | サーバー ⇔ 外部インスタンス（AWS EC2 等）の紐付け + 観測実行状態のキャッシュ | 代理キー `id`（`server_id` UNIQUE / `(provider, external_id)` UNIQUE） | ユーザー明示解除でのみ物理削除。サーバー論理削除では残す（設計 P10） | なし | FR-CLOUD-01 / Phase 9（`V3`）→ [07-aws-ec2-integration](07-aws-ec2-integration.md) |
 
 ### 2.1 属性の詳細（論理）
 
@@ -236,6 +238,8 @@ requirements §10.2.2 の方針を踏襲。想定クエリから最低限:
 
 - **Flyway**。ファイルは `backend/src/main/resources/db/migration/V<n>__<説明>.sql`（`CLAUDE.md` §10）。
 - `V1__init.sql` で全テーブル + 制約 + Index + enum の `CHECK` を作成（ベースライン）。
+  `V2__seed_admin_user.sql` で管理者ユーザーをシード。`V3__cloud_links.sql` で `server_cloud_links`
+  （Phase 9 / FR-CLOUD-01、[07-aws-ec2-integration](07-aws-ec2-integration.md) §4）。
 - ログインユーザーのシードは Flyway or 初期化スクリプト（§12.5 / B1）。
   オフラインデモ用ダミー（サーバー・タグ・履歴）は `infra/docker/initdb/01_seed.sql`（Flyway 適用後 `make db-seed`、[ADR 0003](../../adr/0003-database-neon-with-local-docker-fallback.md)）。
   → 本書のカラム名で `01_seed.sql` が既に前提化している（同ファイル冒頭の注記）。差異が出たら Phase 4 で同期。
@@ -263,7 +267,7 @@ requirements §5.3 / §10.1 の拡張ポイントを、スキーマ変更が最�
 | SSL 期限 / 障害履歴 / 定期メンテナンス | `servers` に 1:N でぶら下がる履歴系テーブル | `servers.id` 代理キーに FK を張るだけで追加可能 |
 | 複数 IP | `server_ip_addresses`（`servers` 1:N） | 現状 `ip_address` 単一（B3）。分離時もサーバー本体の変更は不要 |
 | 認証情報の参照管理 | Secret Manager の識別子（ARN/パス）のみを持つ列 or テーブル | 秘密情報の値は保存しない方針を維持（BR-11 / §10.1.9） |
-| クラウド連携（AWS EC2 等の実行状態参照） | `server_cloud_links`（`servers` 1:0..1、`(provider, external_id)` UNIQUE、`state` / `state_raw` / `state_fetched_at` / `last_error` を保持） | `servers.id` 代理キーに FK を張るだけで追加可能。**ポーラーは新テーブルのみ更新し `servers.version` / `updated_at` に触れない**。管理 `status` とは別概念で自動整合しない。Phase 9 で `V3` 追加 → 設計 [07-aws-ec2-integration](07-aws-ec2-integration.md)（FR-CLOUD-01、[E2](../../requirements/open-issues.md)） |
+| クラウド連携（AWS EC2 等の実行状態参照） | `server_cloud_links`（§2 参照）。**Phase 9 で `V3` 追加済み**（9-1） | `servers.id` に FK を張るだけの加算。**ポーラー・手動更新は新テーブルのみ更新し `servers` / `servers.version` / `servers.updated_at` に触れない**。管理 `status` とは別概念で自動整合しない → [07-aws-ec2-integration](07-aws-ec2-integration.md)（FR-CLOUD-01、[E2](../../requirements/open-issues.md)） |
 
 ---
 

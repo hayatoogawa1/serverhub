@@ -7,10 +7,8 @@
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
 
-> **実装進捗**: 9-1（DB/Entity/DAO/enum、#48）・9-2（provider + poller + AWS SDK、#49）・
-> 9-3（cloud-link API + レスポンス合成、#50）完了。
-> 9-4 実装中（FE: `types/cloud` `api/cloud` `hooks/cloud` `validation/cloudLink`、`CloudStateChip`、
-> `CloudLinkPanel`（明細の「AWS 連携」セクション = 管理ステータスと分離）、`CloudLinkFormModal`）。
+> **実装進捗**: 9-1（#48）・9-2（#49）・9-3（#50）・9-4（FE 明細、#51）完了。
+> 9-5 実装中（一覧に「AWS 実行状態」列 + MSW + テスト）。9-6（AWS IAM 文書）が残り。
 
 ---
 
@@ -352,7 +350,7 @@ implementation("software.amazon.awssdk:ec2")
 | `components/servers/CloudLinkFormModal.tsx`（新規） | インスタンス ID（必須、`i-` 形式）+ リージョン（既定 `ap-northeast-1` プリセット）。409 `CLOUD_LINK_CONFLICT` は externalId フィールドに表示 |
 | `pages/ServerDetailPage.tsx` | `ServerDetailView` と履歴セクションの間に `<CloudLinkPanel>` を配置。`ServerDetailView`（管理情報）は無変更 = `StatusChip` はそのまま |
 | `pages/DashboardPage.tsx` | **変更なし**（§1.3） |
-| `components/servers/ServerListTable.tsx` | 9-5 で「AWS」列を追加 |
+| `components/servers/ServerListTable.tsx`（9-5） | 「AWS 実行状態」列を追加。紐付けあり → `CloudStateChip`（管理「ステータス」列とは別デザイン）、なし・未取得 → 「-」。`TableContainer` の `overflowX: auto` で横スクロール（F7 PC 前提）。既存の列不在アサーションに影響なし |
 
 ### 7.3 表示ルール（C4 / C5）
 

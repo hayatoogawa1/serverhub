@@ -31,6 +31,9 @@ export const serverSummariesFixture: ServerSummary[] = [
     status: 'active',
     tags: ['web', 'payments', 'lb-behind', 'edge'],
     updatedAt: '2026-09-01T18:20:00+09:00',
+    // 管理ステータスは active（稼働中）だが AWS 実行状態は stopped（別概念）
+    cloudState: 'stopped',
+    cloudStateFetchedAt: '2026-09-08T10:32:00+09:00',
   },
   {
     id: 2,
@@ -39,6 +42,7 @@ export const serverSummariesFixture: ServerSummary[] = [
     status: 'maintenance',
     tags: ['db-postgres'],
     updatedAt: '2026-08-20T10:00:00+09:00',
+    // AWS 未連携（cloudState 省略）
   },
 ]
 

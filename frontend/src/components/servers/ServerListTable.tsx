@@ -6,7 +6,9 @@ import { DataTable, type Column } from '@/components/common/DataTable'
 import { EnvironmentChip } from '@/components/common/EnvironmentChip'
 import { StatePlaceholder } from '@/components/common/StatePlaceholder'
 import { StatusChip } from '@/components/common/StatusChip'
+import { CloudStateChip } from '@/components/servers/CloudStateChip'
 import { TagList } from '@/components/common/TagList'
+import { toCloudInstanceState } from '@/types/cloud'
 import { formatDateTime } from '@/utils/format'
 import type { ServerSummary } from '@/types/server'
 
@@ -69,6 +71,22 @@ export function ServerListTable({
           <TagList tags={s.tags} max={3} onTagClick={onTagClick} />
         </Box>
       ),
+    },
+    {
+      // AWS 実行状態（FR-CLOUD-01）。管理「ステータス」列とは別。紐付けなし・未取得は「-」
+      key: 'cloudState',
+      header: 'AWS 実行状態',
+      width: 130,
+      render: (s) => {
+        const state = toCloudInstanceState(s.cloudState)
+        return state ? (
+          <CloudStateChip state={state} />
+        ) : (
+          <Typography component="span" variant="body2" color="text.disabled">
+            -
+          </Typography>
+        )
+      },
     },
     {
       key: 'updatedAt',

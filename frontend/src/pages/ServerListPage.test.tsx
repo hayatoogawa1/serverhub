@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
@@ -227,5 +227,20 @@ describe('ServerListPage', () => {
 
     expect(await screen.findByRole('progressbar')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument())
+  })
+
+  it('「AWS 実行状態」列を出し、紐付けありは状態チップ・なしは「-」', async () => {
+    server.use(...authenticatedHandlers, ...serverHandlers())
+    renderList()
+    await screen.findByText('web-prod-01')
+
+    expect(screen.getByRole('columnheader', { name: 'AWS 実行状態' })).toBeInTheDocument()
+    // fixture: web-prod-01 は管理ステータス active / AWS 実行状態 stopped（別概念）
+    expect(screen.getByRole('img', { name: 'AWS 実行状態: 停止中' })).toBeInTheDocument()
+    expect(screen.getByText('稼働中')).toBeInTheDocument()
+    // db-stg-01 は AWS 未連携 → その行のセルは「-」
+    const dbRow = screen.getByText('db-stg-01').closest('tr')
+    expect(dbRow?.textContent).toContain('-')
+    expect(within(dbRow as HTMLElement).queryByRole('img', { name: /AWS 実行状態/ })).toBeNull()
   })
 })

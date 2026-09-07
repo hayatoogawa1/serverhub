@@ -1,9 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import type { ServerDetail, ServerSummary } from '@/features/servers/types'
-import type {
-  MaintenanceHistoryDetail,
-  MaintenanceHistorySummary,
-} from '@/features/maintenance/types'
+import type { ServerDetail, ServerSummary } from '@/types/server'
+import type { MaintenanceHistoryDetail, MaintenanceHistorySummary } from '@/types/maintenance'
 
 const API = '*/api/v1'
 

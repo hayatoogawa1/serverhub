@@ -1,5 +1,5 @@
 import Typography from '@mui/material/Typography'
-import { PageHeader } from '@/components/PageHeader'
+import { PageHeader } from '@/components/common/PageHeader'
 
 /** SC-02 ダッシュボード。集計カード・グラフは FE-5 で実装する。 */
 export function DashboardPage() {

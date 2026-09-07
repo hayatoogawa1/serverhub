@@ -25,44 +25,57 @@ Backend を先に起動しておくこと（リポジトリルート README 参�
 | `npm run test` | Vitest（1 回実行） |
 | `npm run test:watch` | Vitest（watch） |
 
-## ディレクトリ構成
+## ディレクトリ構成（横スライス = レイヤ別）
 
 ```
 src/
 ├── app/          合成ルート（App / router / queryClient / theme）
-├── pages/        ルーティング単位の画面（SC-01〜08）
-├── features/     ドメインごとの縦スライス（auth / servers / maintenance / dashboard / tags）
-├── components/   2 画面以上で使う共通表示部品
-├── hooks/        横断 hook（useDebouncedValue 等）
-├── api/          apiClient（唯一の Axios インスタンス）/ errors（ApiError 正規化）/ queryKeys
-├── constants/    共有定数
-├── types/        アプリ横断の型（ドメイン enum / API エンベロープ）
-├── utils/        純粋関数（format / validation）
+├── pages/        ルーティング単位の画面（SC-01〜08）。components + hooks を組み立てる
+├── components/
+│   ├── common/       DataTable / Pagination / Modal / ConfirmDialog / StatusChip /
+│   │                 EnvironmentChip / TagChip / TagList / TagInput / CopyButton /
+│   │                 ServerPicker / StatePlaceholder / PageHeader
+│   ├── layout/       AppLayout / AppHeader / AppSidebar
+│   ├── feedback/     FeedbackProvider（トースト）
+│   ├── auth/         LoginForm / AuthGuard
+│   ├── servers/      ServerListTable / ServerSearchBar / ServerDetailView / ServerFormModal
+│   └── maintenance/  MaintenanceHistoryListTable / MaintenanceHistoryFormModal /
+│                     ServerMaintenanceHistorySection
+├── hooks/        TanStack Query ラップ。auth.ts / servers.ts / maintenance.ts / tags.ts
+│                 + useDebouncedValue.ts
+├── api/          client.ts（Axios 唯一のインスタンス）/ errors.ts / queryKeys.ts
+│                 + auth.ts / servers.ts / maintenance.ts / tags.ts（各 interface + Impl + singleton）
+├── types/        api.ts（Page / ApiError / SortOrder）/ domain.ts（enum）/ auth.ts / server.ts / maintenance.ts
+├── validation/   server.ts / maintenance.ts（フォーム検証 + フォーム値→ボディ変換）
+├── url/          serverListParams.ts / maintenanceListParams.ts（URL クエリ ⇔ 型付きパラメータ）
+├── constants/    pagination.ts
+├── utils/        format.ts / validation.ts（純粋関数）
 ├── mocks/        MSW（テスト専用）
 └── test/         テストセットアップ
 ```
 
-### レイヤ構造（機能ごとに繰り返す）
+### レイヤと Backend の対応
 
-Backend の Controller/Service/DAO のような**横方向の層**ではなく、`features/<domain>/` の中に同じ層を並べる**縦スライス**。
-
-| ファイル | 役割 | Backend 相当 |
+| レイヤ | 役割 | Backend 相当 |
 |---|---|---|
-| `features/<d>/types.ts` | DTO / ドメイン型 | DTO / Entity |
-| `features/<d>/api.ts` | HTTP 関数（`getServers` …）→ `api/apiClient` | Controller のクライアント / DAO |
-| `features/<d>/hooks.ts` | TanStack Query ラップ・キャッシュ・invalidate | Service（オーケストレーション） |
-| `features/<d>/formValidation.ts` `searchParams.ts` | 入力検証・URL 変換などの業務ルール | Service（ルール） |
-| `features/<d>/components/` | その機能専用の表示部品 | — |
-| `pages/*Page.tsx` | 画面。features + 共通部品を組み立てる | Controller（画面遷移・イベント） |
-| `api/errors.ts` + `apiClient` インターセプタ | エラー正規化・401 横断 | GlobalExceptionHandler |
+| `pages/*Page.tsx` | 画面。イベント・画面遷移 | Controller（画面） |
+| `components/<domain>/` | ドメイン固有の UI 部品 | — |
+| `hooks/<domain>.ts` | TanStack Query ラップ・キャッシュ・invalidate | Service（オーケストレーション） |
+| `validation/<domain>.ts` `url/*.ts` | 入力検証・URL 変換 | Service（ルール） |
+| `api/<domain>.ts` | `interface XxxApi` + `class XxxApiImpl` + `export const xxxApi`。HTTP 呼び出し | DAO |
+| `api/client.ts` + インターセプタ + `api/errors.ts` | Axios 設定・401 横断・エラー正規化 | 設定 + GlobalExceptionHandler |
+| `types/` | API DTO / ドメイン enum | DTO / Entity |
 
-**依存の向き**: `pages → features → {components, hooks, utils}`、`features/*/api → apiClient` の一方向。
-例外は `AppHeader → features/auth`、`ServerPicker`/`TagInput` → `features/*` の「接続済み共通部品」のみ（[06-ui §3](../docs/design/basic/06-ui.md)）。
+**依存の向き**: `pages → components / hooks → api → client` の一方向。逆流させない。
+例外は `AppHeader → hooks/auth`、`ServerPicker` / `TagInput` → `hooks/*` の「接続済み共通部品」のみ。
+
+**命名規約（[CLAUDE.md](../CLAUDE.md) §4）**: 実装クラスは `Impl` 末尾。FE では api 層のみ該当。
 
 ### 機能を追加/変更するときに触るファイル
 
-例: サーバー一覧に列を足す → `features/servers/types.ts`（型）→ Backend の Summary DTO に無ければ**そこで止める**（FE で N+1 しない）。
-新しい画面 → `pages/XxxPage.tsx` + `features/<d>/`（api・hooks・components）+ `app/router.tsx` にルート追加。
+- 一覧に列を足す → `types/server.ts`。Backend の Summary DTO に無ければ**そこで止める**（FE で N+1 しない）
+- 新しい API を呼ぶ → `api/<domain>.ts`（interface にメソッド追加 + Impl）→ `hooks/<domain>.ts` でラップ
+- 新しい画面 → `pages/XxxPage.tsx` + 必要なら `components/<domain>/` + `app/router.tsx` にルート追加
 
 ### 方針（詳細は CLAUDE.md §3）
 

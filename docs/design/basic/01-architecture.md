@@ -109,25 +109,35 @@ com.serverhub
   メソッドセキュリティ）と各 `Service`（業務ルールとしての権限チェック）。MVP では設けない
   （requirements §10.1.5）。
 
-### 2.3 Frontend レイヤ
+### 2.3 Frontend レイヤ（横スライス = レイヤ別ディレクトリ）
+
+Phase 6 実装時にオーナー判断で**機能フォルダ（feature 縦スライス）から、レイヤ別（横スライス）**へ移行
+（[06-ui §10](06-ui.md)）。Backend の Controller/Service/DAO と対応させ、把握しやすくする。
 
 ```
 main.tsx（Providers: QueryClient / Theme / Router）
   │
-Page（ルーティング単位。SC-01〜08）
+pages/        画面（SC-01〜08）。components + hooks を組み立てる       … Controller（画面）
   │
-Feature（features/<domain>: 画面機能のまとまり）
-  ├─ components/  … その feature 専用の表示部品
-  ├─ hooks/       … useXxxQuery / useXxxMutation（TanStack Query ラップ）
-  ├─ api/         … 関数群（getServers 等）。apiClient を使う
-  └─ types.ts     … その feature の型（API 型含む）
+components/   UI 部品                                                … （表示）
+  ├─ common/       DataTable / Pagination / Modal / ConfirmDialog / StatusChip / TagInput / ServerPicker …
+  ├─ layout/       AppLayout / AppHeader / AppSidebar
+  ├─ feedback/     FeedbackProvider
+  └─ auth/ servers/ maintenance/   … ドメイン固有コンポーネント
   │
-共有: src/components（共通部品）/ src/hooks / src/api/apiClient（Axios）/ src/types / src/utils
+hooks/        useXxxQuery / useXxxMutation（TanStack Query ラップ）  … Service（オーケストレーション）
+  │  auth.ts / servers.ts / maintenance.ts / tags.ts
+api/          HTTP。`interface XxxApi` + `class XxxApiImpl` + `export const xxxApi`  … DAO
+  │  client（Axios 唯一のインスタンス）/ errors / queryKeys / auth / servers / maintenance / tags
+types/        API DTO / ドメイン enum（api.ts / domain.ts / auth.ts / server.ts / maintenance.ts）
+validation/   フォーム検証（server.ts / maintenance.ts）
+url/          URL クエリ ⇔ 型付きパラメータの変換
+utils/  constants/  app/（合成ルート）
 ```
 
-- ディレクトリは既存スキャフォールド（[ADR 0002](../../adr/0002-frontend-technology-versions.md)）に準拠。
-- feature: `features/auth` / `features/servers` / `features/maintenance` / `features/dashboard`。
-- **Axios を各コンポーネントから直接呼ばない**（ESLint で禁止済み）。`features/<d>/api` → `apiClient`。
+- 依存の向き: `pages → components/hooks → api → client`。逆流させない。
+- **Axios を各コンポーネントから直接呼ばない**（ESLint で禁止）。`api/*` の `xxxApi` シングルトン経由。
+- 実装クラスは `Impl` 末尾（`CLAUDE.md` §4）。api 層のみ（hook・純粋関数・コンポーネントはクラスでないため対象外）。
 - 詳細（queryKey 設計・invalidation・ルーティング・認証ガード・共通部品）は 06-ui。
 
 ### 2.4 フロント ↔ バック通信

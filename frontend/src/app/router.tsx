@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
-import { AppLayout } from '@/components/AppLayout'
-import { AuthGuard } from '@/features/auth/AuthGuard'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { AuthGuard } from '@/components/auth/AuthGuard'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { MaintenanceHistoryListPage } from '@/pages/MaintenanceHistoryListPage'

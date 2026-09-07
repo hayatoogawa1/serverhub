@@ -1,6 +1,6 @@
 import Button from '@mui/material/Button'
 import { Link as RouterLink } from 'react-router-dom'
-import { StatePlaceholder } from '@/components/StatePlaceholder'
+import { StatePlaceholder } from '@/components/common/StatePlaceholder'
 
 /** SC-404 Not Found（不正な URL）。 */
 export function NotFoundPage() {

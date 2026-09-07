@@ -4,9 +4,9 @@ import CardContent from '@mui/material/CardContent'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { StatePlaceholder } from '@/components/StatePlaceholder'
-import { LoginForm } from '@/features/auth/LoginForm'
-import { useAuthQuery } from '@/features/auth/hooks'
+import { StatePlaceholder } from '@/components/common/StatePlaceholder'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { useAuthQuery } from '@/hooks/auth'
 
 interface LocationState {
   from?: { pathname: string; search: string }

@@ -156,4 +156,9 @@ public record MaintenanceHistoryDetailResponse(
 | D-MNT-02 | `GET /servers/{id}/maintenance-histories` の 404 は「不存在・削除済み」に統一（02-api の記述を明確化） | 他のサブリソースとの一貫性 |
 | D-MNT-03 | `maintenance` → `server`（`ServerDao` 参照）の依存を許容する。D-SRV-04 とは逆方向・必須の依存として区別 | BR-06 は対象サーバーの存在確認そのものが業務ルール |
 
-- SQL ファイルの正確な列名は Phase 4（DB 物理設計）確定後に最終化する。
+- SQL ファイルの列名は Phase 4（[db/01-schema §2.5](../../db/01-schema.md)）で確定済み。Phase 5 実装で
+  `maintenance` パッケージに落とした。種別 enum の DB 変換は `MaintenanceTypeConverter`（03-server D-SRV-01 と同じ
+  `value()`/`fromValue` 委譲）を `DomainConvertersProvider` に追加。全体一覧の SQL は `servers` と `JOIN` し
+  `s.deleted_at is not null` を `server_deleted` として SELECT する（F4、サーバーの削除状態では絞り込まない）。
+- `GET /servers/{id}/maintenance-histories`（FR-MNT-03）は `server` パッケージではなく `maintenance` パッケージの
+  `ServerMaintenanceHistoryController` が担当する（履歴機能としての一貫性、§4）。

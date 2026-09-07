@@ -12,6 +12,7 @@ import org.seasar.doma.DomainConverters;
 @DomainConverters({
   EnvironmentConverter.class,
   StatusConverter.class,
-  VirtualizationTypeConverter.class
+  VirtualizationTypeConverter.class,
+  MaintenanceTypeConverter.class
 })
 public class DomainConvertersProvider {}

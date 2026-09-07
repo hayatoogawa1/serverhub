@@ -12,7 +12,7 @@
 - **S5**（CSP 厳格度）→ **確定**（2026-09-04、基本設計 [04-security](../design/basic/04-security.md)）、**S6**（セッションストア）→ 可用性設計時
 - **N1**（Neon ブランチ CI）→ 将来、**N2**（本番 DB は Neon か RDS）→ Phase 9
 - **E1**（実サーバー連携 / 死活・構成の自動取得）→ **MVP 対象外・MVP 完了後の独立フェーズ**（下記表）
-- **E2**（AWS EC2 連携が既存設計に与える影響）→ **調査済み**（2026-09-08、[探索: AWS EC2 連携影響調査](../design/exploration/01-aws-ec2-integration-impact.md)）。Phase 9 で正式設計。下記表
+- **E2**（AWS EC2 連携が既存設計に与える影響）→ 調査済み → **Phase 9 設計レビュー中**（[07-aws-ec2-integration](../design/basic/07-aws-ec2-integration.md)、FR-CLOUD-01）。下記表
 
 | ID | 区分 | 論点 | Claude の叩き台 / 推奨 | 状態 | 決定・メモ |
 |---|---|---|---|---|---|
@@ -43,7 +43,7 @@
 | N1 | インフラ/CI | Neon ブランチを PR ごとに作成して CI で使うワークフロー | 将来対応。`NEON_API_KEY` / `NEON_PROJECT_ID` を GitHub Actions Secrets に登録し `neondatabase/create-branch-action` 等を使う。現状 CI は Testcontainers で Neon 非依存 | 将来（要承認） | [ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md) |
 | N2 | インフラ | 本番 DB を Neon 継続にするか AWS RDS にするか | Phase 9 で判断。どちらでも接続は環境変数で切替 | 保留（Phase 9） | [ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md) |
 | E1 | 要件/アーキ | 実サーバーとの連携（死活監視・構成情報の自動取得・ステータス自動更新等）を MVP から入れるか、MVP 後に回すか | **MVP 後の独立フェーズ**を推奨。理由: (1) MVP のコア価値（台帳の一元化・検索・変更履歴）は連携の有無と独立、(2) 拡張シームは §14 で確保済み（Controller↔Service 分離）、(3) 連携は認証情報管理（Secrets Manager・ローテーション）・M2M 認証（§14「セッション認証は外部連携時に見直しが必要」）・非同期基盤（ポーリング/キュー/リトライ/手入力値との乖離解決）・アウトバウンド通信のセキュリティを新規に要し MVP を肥大化させる、(4) 実運用後の方が「何を同期すべきか」「衝突時の UX」を具体的に設計できる。やるなら読み取り専用の観測（死活・メトリクス取得）から開始し、構成変更（書き込み）には踏み込まない | 将来（MVP 完了後・要承認） | requirements.md §14「将来拡張」。BR-11 / §10.1.9（機密を保存しない設計）との整合が前提条件 |
-| E2 | アーキ/データ | AWS EC2 連携（Phase 9 で追加予定）が Phase 1〜8 の既存設計に与える影響 | **既存設計は破壊的変更なしで受け入れ可能**。詳細は [探索ドキュメント](../design/exploration/01-aws-ec2-integration-impact.md)。要点: (1) 紐付けは別テーブル `server_cloud_links (provider, external_id)` を後付け（`servers` スキーマ不変）、(2) 実行状態は DB キャッシュ + オンデマンド更新（案 C）、AWS 断でも台帳は読める・「HH:MM 時点」を明示、(3) **ServerHub の管理 `status`（active/maintenance/retired）は AWS 状態で上書きしない** — 別カラム・別 enum・自動整合なし、(4) provider を文字列にして AWS 以外へ汎用化、(5) IAM ロール（M2M）でアクセスし秘密情報は保存しない（E1 の前提を踏襲）。**Phase 8 では本番コード・設定を一切追加しない** | **調査済み**（2026-09-08）。Phase 9 で §7 の 6 論点を確定 | B2（`status` は管理ライフサイクル）/ 03-data-model §5 / E1 |
+| E2 | アーキ/データ | AWS EC2 連携（Phase 9 で追加予定）が Phase 1〜8 の既存設計に与える影響 | **既存設計は破壊的変更なしで受け入れ可能**。詳細は [探索ドキュメント](../design/exploration/01-aws-ec2-integration-impact.md)。要点: (1) 紐付けは別テーブル `server_cloud_links (provider, external_id)` を後付け（`servers` スキーマ不変）、(2) 実行状態は DB キャッシュ + オンデマンド更新（案 C）、AWS 断でも台帳は読める・「HH:MM 時点」を明示、(3) **ServerHub の管理 `status`（active/maintenance/retired）は AWS 状態で上書きしない** — 別カラム・別 enum・自動整合なし、(4) provider を文字列にして AWS 以外へ汎用化、(5) IAM ロール（M2M）でアクセスし秘密情報は保存しない（E1 の前提を踏襲）。**Phase 8 では本番コード・設定を一切追加しない** | **設計レビュー中**（2026-09-08、[07-aws-ec2-integration](../design/basic/07-aws-ec2-integration.md) §3 に論点 P1〜P15 + 推奨案）。FR-CLOUD-01 | B2（`status` は管理ライフサイクル）/ 03-data-model §5 / E1 |
 | S1 | セキュリティ/設計 | DB の管理ユーザーとアプリ接続ユーザーの分離、アプリユーザーの権限最小化を MVP で実装するか Phase 4〜5 に回すか | Phase 4（DB 設計）〜5（Backend 実装）で対応。`initdb/` でアプリ用ロール（対象スキーマの DML のみ + `ALTER DEFAULT PRIVILEGES`）を作成、Flyway/管理は別権限 | **確定**（2026-09-04） | Phase 4〜5 で対応。最終的にアプリユーザーの DB 権限を最小限にする |
 | S2 | セキュリティ | 開発 DB（docker compose）の公開ポートを `127.0.0.1` バインドに限定するか | `ports` を `127.0.0.1:${DB_PORT}:5432` にする。WSL/他ツールからの接続要件があれば緩和。影響小のため MVP で対応可 | 要承認 | requirements.md §10.1.15、infra/docker/docker-compose.yml |
 | S3 | セキュリティ | ログイン試行のブルートフォース対策（アカウントロック / レート制限）を MVP で入れるか | MVP はログイン失敗ログのみ。アカウントロック・レート制限は将来対応 | **確定**（2026-09-04） | MVP は失敗ログまで。ロック/レート制限は将来対応。残存リスクは §10.1.2 に明記 |

@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 4 完了。Phase 5（Backend 実装）へ。各フェーズの決定に伴い随時更新する。
+> Phase 8（Docker）完了。Phase 9（AWS）着手。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -199,14 +199,15 @@ utils/ constants/ app/（合成ルート）
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 7（テスト）完了 → Phase 8（Docker）進行中。**
-Phase 5 は詳細設計 01〜05 + 横断（ログ）を実クラス化して完了（PR #29〜#33 / #35）。
-Phase 6 は Google Stitch の「MVP UI/UX 実装仕様書」を UI 方針に、**Backend/DB は変更せず既存 API のまま**
-React + TypeScript + MUI で実装（PR #36〜#42）。
-Phase 7 は MVP 全体の品質確認: FE/BE の自動テスト維持・不足分の追加、FE↔BE の結合確認、不具合修正（PR #43〜#44）。
-Phase 8 はコンテナ化: nginx が SPA 配信 + `/api` を Backend へリバースプロキシ（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)）。
-`backend/Dockerfile`・`frontend/Dockerfile`（+ nginx.conf）・`infra/docker/docker-compose.app.yml`・`make app-*`。
-**AWS 連携（E2）の本番コードは Phase 8 では追加しない。**
+**現在: Phase 8（Docker）完了 → Phase 9（AWS）進行中。**
+Phase 6 は Stitch の UI 方針で FE を実装（PR #36〜#42）。Phase 7 は品質確認・不具合修正（#43〜#44）。
+Phase 8 はコンテナ化: nginx が SPA 配信 + `/api` を Backend へリバースプロキシ（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、
+`backend/Dockerfile`・`frontend/Dockerfile`+nginx.conf・`infra/docker/docker-compose.app.yml`・`make app-*`、#46）。
+**Phase 9 の最重要要件は「AWS EC2 の実行状態を ServerHub 上で参照できること」**（FR-CLOUD-01、
+設計 [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)、レビュー中）。
+不変条件（オーナー指示）: `servers.status`（管理ライフサイクル）を AWS 実行状態で上書きしない・
+別モデル別カラム・画面で分離表示・AWS 障害時はキャッシュ + 取得失敗を明示・EC2 の操作機能は作らない・
+既存 MVP と既存テスト（BE 89 / FE 123）を壊さない。**設計レビュー確定まで実装 PR を作らない。**
 
 ---
 
@@ -285,7 +286,13 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   `/api` を Backend へリバースプロキシ**（同一オリジン、CORS 不要）。Backend は SPA を配信しない。
   マルチステージビルド・非 root・ヘルスチェック。`make app-up` でフルスタック起動 → ローカルで
   ログイン〜CRUD〜dashboard の疎通を確認済み。`.gitattributes` で `gradlew`/`*.sh`/`Dockerfile`/`.env*` を
-  LF 固定（CRLF だと docker build / compose が壊れる）→ [ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)
+  LF 固定（CRLF だと docker build / compose が壊れる）→ [ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)。**Phase 8 完了（#46）**
+- Phase 9 AWS: 最重要要件は **AWS EC2 実行状態の参照**（FR-CLOUD-01）。設計レビュー用ドキュメント
+  [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md) を作成（DB `V3 server_cloud_links` /
+  API サブリソース `/servers/{id}/cloud-link` + `cloudLink` レスポンス追加 / Backend `com.serverhub.cloud`
+  パッケージ + `@Scheduled` ポーラー + AWS SDK v2 / FE `CloudStateChip` + 明細の分離表示 / IAM は
+  `ec2:DescribeInstances` のみ・IAM ロール）。**§12 の論点をオーナーがレビュー確定 → 実装 PR 9-1〜9-6**。
+  `servers.status` は不変。既存テスト維持
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

@@ -15,6 +15,7 @@ DB 物理設計（DDL・マイグレーション）は Phase 4。
 | 04 | [04-security.md](04-security.md) | 認証・認可・セキュリティ設計 | ✅ 確定（v1.0、PR #15） |
 | 05 | [05-cross-cutting.md](05-cross-cutting.md) | エラー設計・ログ設計・トランザクション方針 | ✅ 確定（v1.0、PR #16） |
 | 06 | [06-ui.md](06-ui.md) | 画面設計・フロントエンド設計 | ✅ 確定（v1.0、PR #17） |
+| 07 | [07-aws-ec2-integration.md](07-aws-ec2-integration.md) | AWS EC2 実行状態の参照（FR-CLOUD-01） | 🔍 Phase 9・レビュー中 |
 
 ## 進め方
 

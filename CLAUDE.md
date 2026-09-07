@@ -261,6 +261,9 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   ⑥ログ仕上げ実装中: 構造化ログ ECS を標準出力へ有効化（D-XCUT-09）+ 業務イベント INFO ログ（§4.3）
   → [05-cross-cutting](docs/design/basic/05-cross-cutting.md) §4。これで Phase 5 Backend 実装は完了
 - 実サーバー連携（死活監視・構成自動取得等）は MVP 対象外・MVP 後の独立フェーズ → [open-issues E1](docs/requirements/open-issues.md)
+- AWS EC2 連携（Phase 9）の既存設計への影響調査を実施 → [open-issues E2](docs/requirements/open-issues.md) /
+  [探索ドキュメント](docs/design/exploration/01-aws-ec2-integration-impact.md)。破壊的変更は不要。
+  不変条件: **管理 `status`（active/maintenance/retired）を AWS 実行状態で上書きしない**（別テーブル・別 enum・自動整合なし）
 - **命名規約変更（オーナー指示）**: 実装クラスは `Impl` 末尾（§4）。
   FE 横スライス化 + api 層 `interface`+`Impl`（#40 マージ済み）。
   Backend の Service を `interface`+`Impl` に分離（ServerService/TagService/MaintenanceHistoryService/

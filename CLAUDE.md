@@ -199,13 +199,13 @@ utils/ constants/ app/（合成ルート）
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 5（Backend 実装）完了 → Phase 6（Frontend 実装）進行中。**
+**現在: Phase 6（Frontend 実装）完了 → Phase 7（テスト）進行中。**
 Phase 5 は詳細設計 01〜05 + 横断（ログ）を実クラス化して完了（PR #29〜#33 / #35）。
 Phase 6 は Google Stitch の「MVP UI/UX 実装仕様書」を UI 方針に、**Backend/DB は変更せず既存 API のまま**
-React + TypeScript + MUI で実装する。優先順位は 確定要件 > API > DB > 既存 FE 共通設計（[06-ui](docs/design/basic/06-ui.md)）
-> Stitch 仕様。Stitch との差分整理は [06-ui §10](docs/design/basic/06-ui.md)。
-1 機能 = 1 `feature/*` ブランチ = 1 PR（FE-1 基盤 → FE-2 サーバー参照 → FE-3 サーバー更新 →
-FE-4 メンテ履歴 → FE-5 ダッシュボード、進捗は §11）。
+React + TypeScript + MUI で実装（PR #36〜#42、優先順位は 確定要件 > API > DB > 既存 FE 共通設計
+（[06-ui](docs/design/basic/06-ui.md)）> Stitch、差分は [06-ui §10](docs/design/basic/06-ui.md)）。
+Phase 7 は MVP 全体の品質確認: FE/BE の自動テスト維持・不足分の追加、FE↔BE の結合確認
+（Docker Postgres + `bootRun` での API 疎通含む）、発見した不具合の修正。**MVP 外の機能は追加しない。**
 
 ---
 
@@ -265,11 +265,17 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   FE 横スライス化 + api 層 `interface`+`Impl`（#40 マージ済み）。
   Backend の Service を `interface`+`Impl` に分離（ServerService/TagService/MaintenanceHistoryService/
   DashboardService + ServerHubUserDetailsServiceImpl、#41）。Controller はインターフェースを DI（変更なし）
-- Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 登録/編集/論理削除（#38）・
-  FE-4 メンテナンス履歴（#39）・FE-4.5 横スライス化（#40）マージ済み。
-  FE-5 ダッシュボード（SC-02、`recharts` 追加、集計 → 絞り込み一覧へドリルダウン）実装中 →
-  **これで Phase 6 の全画面が揃う**。FE のディレクトリ構造は [frontend/README.md](frontend/README.md)、
-  Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
+- Phase 6 Frontend 完了: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 登録/編集/論理削除（#38）・
+  FE-4 メンテナンス履歴（#39）・FE-4.5 横スライス化（#40）・FE-5 ダッシュボード（#42、`recharts`）
+  マージ済み。SC-01〜08 + 404 の全画面が揃う。FE のディレクトリ構造は
+  [frontend/README.md](frontend/README.md)、Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
+- Phase 7 テスト: format-file フックを Windows 対応（#43）。
+  FE 401 インターセプタの不具合を修正 — `/auth/me` 自身の 401 でも横断ハンドラが起動し
+  `['auth','me']` invalidate → `/auth/me` 再取得の無限ループになっていた。認証エンドポイント
+  （`/auth/**`）の 401 はハンドラ対象外にした（[06-ui §2.3 / D-UI-03](docs/design/basic/06-ui.md)）。
+  FE テスト +13（ServerListPage の URL クエリ同期 / 絞り込み / ページング、ルーティング統合
+  = 戻る/進む・セッション切れ・NotFound、apiClient インターセプタ）。BE は Testcontainers
+  結合テストに加え Docker Postgres + `bootRun` で主要 API を手動疎通確認
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

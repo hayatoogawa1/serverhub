@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import type { ServerDetail, ServerSummary } from '@/types/server'
 import type { MaintenanceHistoryDetail, MaintenanceHistorySummary } from '@/types/maintenance'
+import type { CloudLink } from '@/types/cloud'
 
 const API = '*/api/v1'
 
@@ -56,10 +57,23 @@ export const maintenanceHistoriesFixture: MaintenanceHistoryDetail[] = [
 
 type MutationOutcome = 'success' | 'duplicate-hostname' | 'optimistic-lock' | 'validation' | 'error'
 
+export const cloudLinkFixture: CloudLink = {
+  provider: 'aws_ec2',
+  externalId: 'i-0123456789abcdef0',
+  region: 'ap-northeast-1',
+  state: 'stopped',
+  stateRaw: 'stopped',
+  stateFetchedAt: '2026-09-08T10:32:00+09:00',
+  stale: false,
+  lastError: null,
+}
+
 interface ServerHandlerOptions {
   summaries?: ServerSummary[]
   detail?: ServerDetail
   histories?: MaintenanceHistoryDetail[]
+  /** 指定すると `GET /servers/:id` レスポンスに `cloudLink` を含める。 */
+  cloudLink?: CloudLink | null
   /** 詳細を 404 にする。 */
   detailNotFound?: boolean
   /** POST /servers の結果。 */
@@ -172,7 +186,8 @@ export function serverHandlers(opts: ServerHandlerOptions = {}) {
           { status: 404 },
         )
       }
-      return HttpResponse.json(detail)
+      const withCloud = 'cloudLink' in opts ? { ...detail, cloudLink: opts.cloudLink } : detail
+      return HttpResponse.json(withCloud)
     }),
     http.get(`${API}/servers/:id/maintenance-histories`, ({ request }) => {
       const url = new URL(request.url)
@@ -191,6 +206,99 @@ export function serverHandlers(opts: ServerHandlerOptions = {}) {
       const prefix = new URL(request.url).searchParams.get('prefix') ?? ''
       const all = ['web', 'web-edge', 'payments', 'db-postgres']
       return HttpResponse.json(all.filter((t) => t.startsWith(prefix)))
+    }),
+  ]
+}
+
+type CloudLinkOutcome =
+  | 'success'
+  | 'conflict'
+  | 'validation'
+  | 'server-not-found'
+  | 'refresh-aws-failed'
+  | 'refresh-provider-unavailable'
+
+interface CloudLinkHandlerOptions {
+  /** `PUT` / `refresh` が返す cloudLink（`success` 時）。 */
+  cloudLink?: CloudLink
+  putOutcome?: CloudLinkOutcome
+  refreshOutcome?: CloudLinkOutcome
+  spy?: { put?: unknown; deleteCalled?: boolean; refreshCalled?: boolean }
+}
+
+/** SC-04 の cloud-link サブリソース（`PUT` / `DELETE` / `POST refresh`）の MSW ハンドラ。 */
+export function cloudLinkHandlers(opts: CloudLinkHandlerOptions = {}) {
+  const link = opts.cloudLink ?? cloudLinkFixture
+
+  const errorFor = (outcome: CloudLinkOutcome) => {
+    switch (outcome) {
+      case 'conflict':
+        return HttpResponse.json(
+          {
+            code: 'CLOUD_LINK_CONFLICT',
+            message: 'このインスタンスは別のサーバーに連携済みです。',
+            traceId: 't',
+          },
+          { status: 409 },
+        )
+      case 'validation':
+        return HttpResponse.json(
+          {
+            code: 'VALIDATION_ERROR',
+            message: '入力内容を確認してください。',
+            traceId: 't',
+            errors: [
+              { field: 'externalId', message: 'インスタンス ID の形式が正しくありません。' },
+            ],
+          },
+          { status: 400 },
+        )
+      case 'server-not-found':
+        return HttpResponse.json(
+          { code: 'RESOURCE_NOT_FOUND', message: '対象が見つかりません。', traceId: 't' },
+          { status: 404 },
+        )
+      case 'refresh-provider-unavailable':
+        return HttpResponse.json(
+          {
+            code: 'CLOUD_PROVIDER_UNAVAILABLE',
+            message: 'クラウド連携が利用できません。時間をおいて再度お試しください。',
+            traceId: 't',
+          },
+          { status: 503 },
+        )
+      default:
+        return HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: 'システムエラーが発生しました。', traceId: 't' },
+          { status: 500 },
+        )
+    }
+  }
+
+  return [
+    http.put(`${API}/servers/:id/cloud-link`, async ({ request }) => {
+      if (opts.spy) opts.spy.put = await request.json()
+      if (opts.putOutcome && opts.putOutcome !== 'success') return errorFor(opts.putOutcome)
+      return HttpResponse.json(link)
+    }),
+    http.delete(`${API}/servers/:id/cloud-link`, () => {
+      if (opts.spy) opts.spy.deleteCalled = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+    http.post(`${API}/servers/:id/cloud-link/refresh`, () => {
+      if (opts.spy) opts.spy.refreshCalled = true
+      if (opts.refreshOutcome === 'refresh-provider-unavailable') {
+        return errorFor('refresh-provider-unavailable')
+      }
+      if (opts.refreshOutcome === 'server-not-found') return errorFor('server-not-found')
+      if (opts.refreshOutcome === 'refresh-aws-failed') {
+        // AWS 取得失敗でも 200: キャッシュ値 + lastError（P8）
+        return HttpResponse.json({
+          ...link,
+          lastError: 'EC2 DescribeInstances failed: throttled',
+        })
+      }
+      return HttpResponse.json({ ...link, state: 'running', stateRaw: 'running' })
     }),
   ]
 }

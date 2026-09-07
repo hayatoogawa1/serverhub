@@ -1,5 +1,6 @@
 import type { Environment, Status, VirtualizationType } from '@/types/domain'
 import type { SortOrder } from '@/types/api'
+import type { CloudInstanceState, CloudLink } from '@/types/cloud'
 
 /** サーバー一覧の 1 行（Backend `ServerSummaryResponse`）。ipAddress / description は含まれない。 */
 export interface ServerSummary {
@@ -9,6 +10,9 @@ export interface ServerSummary {
   status: Status
   tags: string[]
   updatedAt: string
+  /** AWS 実行状態のバッジ用（FR-CLOUD-01）。紐付けなし・未取得は `null`（省略されうる）。 */
+  cloudState?: CloudInstanceState | null
+  cloudStateFetchedAt?: string | null
 }
 
 /** サーバー詳細（Backend `ServerDetailResponse`）。 */
@@ -28,6 +32,8 @@ export interface ServerDetail {
   version: number
   createdAt: string
   updatedAt: string
+  /** AWS EC2 等との紐付け + 観測実行状態（FR-CLOUD-01）。**未連携は `null`**（省略されうる）。 */
+  cloudLink?: CloudLink | null
 }
 
 /**

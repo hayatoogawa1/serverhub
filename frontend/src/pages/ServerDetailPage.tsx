@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatePlaceholder } from '@/components/common/StatePlaceholder'
 import { useFeedback } from '@/components/feedback/context'
+import { CloudLinkPanel } from '@/components/servers/CloudLinkPanel'
 import { ServerDetailView } from '@/components/servers/ServerDetailView'
 import { ServerFormModal } from '@/components/servers/ServerFormModal'
 import { useDeleteServerMutation, useServerQuery } from '@/hooks/servers'
@@ -115,6 +116,11 @@ export function ServerDetailPage() {
       />
       <Stack spacing={4}>
         <ServerDetailView server={server} />
+        <CloudLinkPanel
+          serverId={server.id}
+          serverHostname={server.hostname}
+          cloudLink={server.cloudLink}
+        />
         <ServerMaintenanceHistorySection serverId={server.id} serverHostname={server.hostname} />
       </Stack>
 

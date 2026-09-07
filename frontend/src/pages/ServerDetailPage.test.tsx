@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { authenticatedHandlers } from '@/mocks/handlers'
-import { serverHandlers, serverDetailFixture } from '@/mocks/serverFixtures'
+import {
+  cloudLinkFixture,
+  cloudLinkHandlers,
+  serverHandlers,
+  serverDetailFixture,
+} from '@/mocks/serverFixtures'
 import { server } from '@/mocks/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { ServerDetailPage } from './ServerDetailPage'
@@ -106,5 +111,30 @@ describe('ServerDetailPage', () => {
     await user.click(await screen.findByRole('button', { name: '台帳から削除する' }))
 
     expect(await screen.findByText('対象が見つかりません。')).toBeInTheDocument()
+  })
+
+  it('cloudLink が null なら「AWS 未連携」（既存の管理ステータス表示は変わらない）', async () => {
+    server.use(...authenticatedHandlers, ...serverHandlers({ cloudLink: null }))
+    renderDetail('/servers/1')
+    await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
+
+    expect(await screen.findByText(/AWS 未連携です/)).toBeInTheDocument()
+    // 管理ステータス（稼働中）は従来どおり表示
+    expect(screen.getByText('稼働中')).toBeInTheDocument()
+  })
+
+  it('cloudLink があると「AWS 連携」セクションを管理ステータスと分けて表示する', async () => {
+    server.use(
+      ...authenticatedHandlers,
+      ...serverHandlers({ cloudLink: cloudLinkFixture }),
+      ...cloudLinkHandlers(),
+    )
+    renderDetail('/servers/1')
+    await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
+
+    // AWS 実行状態（停止中）は専用チップ。管理ステータス（稼働中）とは別物
+    expect(await screen.findByRole('img', { name: 'AWS 実行状態: 停止中' })).toBeInTheDocument()
+    expect(screen.getByText('稼働中')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'AWS 連携' })).toBeInTheDocument()
   })
 })

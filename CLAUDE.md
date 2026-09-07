@@ -188,13 +188,13 @@ Page → Feature → Component
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 4（DB 設計）完了 → Phase 5（Backend 実装）へ。**
-物理スキーマ設計 [docs/db/01-schema.md](docs/db/01-schema.md) と Flyway マイグレーション
-[`V1__init.sql`](backend/src/main/resources/db/migration/V1__init.sql) はともに v1.0 確定（PR #26〜#27、
-CI の Testcontainers で実 PostgreSQL への適用を確認済み）。
-Phase 5 は詳細設計 [docs/design/detail/](docs/design/detail/) 01〜05 の Entity/DAO/DTO/エラー設計を
-`backend/src/main/java/com/serverhub/` の実クラスに落とす。1 機能 = 1 `feature/*` ブランチ = 1 PR で進める
-（①common→②auth→③server+tag→④maintenance→⑤dashboard、進捗は §11）。
+**現在: Phase 5（Backend 実装）完了 → Phase 6（Frontend 実装）進行中。**
+Phase 5 は詳細設計 01〜05 + 横断（ログ）を実クラス化して完了（PR #29〜#33 / #35）。
+Phase 6 は Google Stitch の「MVP UI/UX 実装仕様書」を UI 方針に、**Backend/DB は変更せず既存 API のまま**
+React + TypeScript + MUI で実装する。優先順位は 確定要件 > API > DB > 既存 FE 共通設計（[06-ui](docs/design/basic/06-ui.md)）
+> Stitch 仕様。Stitch との差分整理は [06-ui §10](docs/design/basic/06-ui.md)。
+1 機能 = 1 `feature/*` ブランチ = 1 PR（FE-1 基盤 → FE-2 サーバー参照 → FE-3 サーバー更新 →
+FE-4 メンテ履歴 → FE-5 ダッシュボード、進捗は §11）。
 
 ---
 
@@ -250,6 +250,8 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   ⑥ログ仕上げ実装中: 構造化ログ ECS を標準出力へ有効化（D-XCUT-09）+ 業務イベント INFO ログ（§4.3）
   → [05-cross-cutting](docs/design/basic/05-cross-cutting.md) §4。これで Phase 5 Backend 実装は完了
 - 実サーバー連携（死活監視・構成自動取得等）は MVP 対象外・MVP 後の独立フェーズ → [open-issues E1](docs/requirements/open-issues.md)
+- Phase 6 Frontend: FE-1 基盤（apiClient・認証・AuthGuard・AppLayout・ルーティング・共通部品・Login）実装中。
+  Stitch 仕様 vs Backend の差分は [06-ui §10](docs/design/basic/06-ui.md)（D-UI-06〜08 + 差分表）に整理済み
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

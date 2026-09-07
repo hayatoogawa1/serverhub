@@ -48,8 +48,9 @@ export default tseslint.config(
     },
   },
   {
-    // 設定ファイル・テスト・モック・apiClient 自体では制約を緩める
-    files: ['*.{js,ts}', 'src/test/**', 'src/mocks/**', 'src/api/apiClient.ts'],
+    // 設定ファイル・テスト・モック・api 層自体では axios 直接 import の制約を緩める
+    // （no-restricted-imports の意図は「コンポーネントから直接呼ばない」であり、api/ は許可対象）
+    files: ['*.{js,ts}', 'src/test/**', 'src/mocks/**', 'src/api/**'],
     rules: {
       'no-restricted-imports': 'off',
     },

@@ -1,20 +1,50 @@
-import axios, { type AxiosInstance } from 'axios'
+import axios, { AxiosError, type AxiosInstance } from 'axios'
 
 /**
  * Backend への唯一の HTTP 入り口。
  *
  * - コンポーネントや hook から直接 axios を import しない（ESLint で禁止）。
- *   必ず `src/api/` 配下の関数を経由し、それらがこの client を使う。
- * - 認証はセッション + Cookie。`withCredentials: true` で Cookie を送受信する。
- * - `baseURL` は `/api`。開発時は Vite の proxy が Backend(8080) に転送する。
- *
- * 認証切れ（401）の共通ハンドリングやエラー正規化のためのインターセプタは
- * Phase 5（認証実装）で追加する。
+ *   必ず `src/features/<d>/api` の関数を経由し、それらがこの client を使う。
+ * - 認証はセッション + Cookie。`withCredentials: true` で送受信する。
+ * - CSRF: Backend は `XSRF-TOKEN` Cookie を発行し `X-XSRF-TOKEN` ヘッダを要求する。
+ *   axios は既定でこの Cookie 名 / ヘッダ名を使って変更系リクエストに自動付与する
+ *   （SPA 起動時に `GET /api/v1/auth/me` を呼んで Cookie を発行させておく、02-api §2.2）。
+ * - `baseURL` は `/api/v1`（02-api D-API-01 / 01-architecture §2.4）。開発時は Vite proxy が
+ *   `/api` を Backend(8080) に転送する。
  */
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '/api/v1',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 })
+
+type UnauthorizedHandler = () => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+/**
+ * `/auth/login` 以外で 401 が返ったときに呼ばれるハンドラを登録する（App 起動時に 1 度だけ）。
+ *
+ * 06-ui D-UI-03: インターセプタから `navigate()` はせず、`['auth','me']` を invalidate して
+ * `AuthGuard` に宣言的にリダイレクトさせる。ルーティングの命令的分散を避ける。
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {
+  unauthorizedHandler = handler
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      const url = error.config?.url ?? ''
+      if (!url.endsWith('/auth/login')) {
+        unauthorizedHandler?.()
+      }
+    }
+    return Promise.reject(error instanceof Error ? error : new Error('request failed'))
+  },
+)

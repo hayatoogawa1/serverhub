@@ -134,24 +134,34 @@ Phase 3 でこの集合を正式化し、機能追加に伴うコード追加ル
   （[01-architecture §2.1](01-architecture.md) の「Filter → Security」の順を実現）。
 - リクエスト/レスポンスボディは**全文ダンプしない**（requirements §10.1.11）。ログに残すのは
   メタ情報（メソッド・パス・ステータス・所要時間）のみ。
+- Phase 5 実装時点ではリクエストログにユーザー識別子は含めない（requirements §10.5 は「（あれば）」）。
+  `RequestLoggingFilter` は Security フィルタより前段で動くため、`finally` 到達時には `SecurityContext` が
+  クリア済みで principal を取得できない。ユーザー識別子付与が必要になったら、Security 通過後に MDC へ
+  `userId` を積む小さなフィルタ/インターセプタを別途追加する（業務イベント INFO と認証イベントログでは
+  ユーザーを記録済み、§4.3）。
 
 ### 4.2 構造化ログ
 
 - **Spring Boot 標準の Structured Logging**（JSON 出力）を使い、専用ライブラリ（Logstash encoder 等）
-  を追加しない（依存を増やさない、`CLAUDE.md` §4「技術的負債を増やす実装を安易に選ばない」）。
-  具体的なフォーマット（ECS 系等）と設定キーは Phase 5 の実装時に Spring Boot 4.1 の対応状況を
-  確認して確定する。
-- 出力するフィールドは requirements §10.5 に準拠：`timestamp` / `level` / `logger` / `message` /
-  `traceId`（MDC 経由で自動付与）/（あれば）ユーザー識別子。
+  や `logback-spring.xml` を追加しない（依存・設定を増やさない、`CLAUDE.md` §4）。
+- **フォーマットは ECS（Elastic Common Schema）**、出力先は**標準出力**（`logging.structured.format.console=ecs`）。
+  Phase 5 実装時に確定（D-XCUT-09）。ECS を選ぶ理由: Spring Boot 標準対応フォーマットの中で最も成熟し
+  フィールド意味論（`@timestamp` / `log.level` / `log.logger` / `message` / `error.*`）が明確で、
+  コンテナ・クラウド（Phase 8/9、CloudWatch 等）の取り込みに素直。
+- 出力するフィールドは requirements §10.5 に準拠：`@timestamp` / `log.level` / `log.logger` / `message` /
+  `traceId`（MDC 経由で ECS フォーマッタが各行へ自動付与）/（あれば）ユーザー識別子。
+- ローカルで素のテキストログが見たい場合は環境変数 `LOGGING_STRUCTURED_FORMAT_CONSOLE=`（空）で無効化できる。
 - ログレベルの使い分け（`ERROR`/`WARN`/`INFO`/`DEBUG`）は requirements §10.5 のまま。本書では
   「どの例外がどのレベルか」を §2.2 で具体化した。
 
 ### 4.3 業務イベントログ（`INFO`）
 
-- ログイン結果は 04-security（`AuthenticationSuccessHandler`/`FailureHandler`）で記録（requirements §10.1.2）。
+- ログイン結果は 04-security（`LoginSuccessHandler`/`LoginFailureHandler`）で記録済み（requirements §10.1.2）。
 - サーバーの登録・更新・削除、メンテナンス履歴の登録は Service 層で 1 行の `INFO` ログを出す
   （「重要な業務イベント」、requirements §10.5）。内容は「操作種別・対象種別・対象 ID・結果」に限り、
   機密情報（ホスト名等の値そのもの）は含めない（IDは機密情報ではない、requirements §10.1.11「値そのものより ID を優先」）。
+  Phase 5 実装: `ServerService`（`server created/updated/deleted (logical): id=...`）/
+  `MaintenanceHistoryService`（`maintenance history created: id=... serverId=...`）。
 
 ---
 
@@ -190,8 +200,10 @@ Phase 3 でこの集合を正式化し、機能追加に伴うコード追加ル
 | D-XCUT-03 | ホスト名重複は Service 事前チェック（主経路）+ DB 制約違反変換（安全網）の二段構え、いずれも `409` | requirements §10.1.1 多層防御 |
 | D-XCUT-04 | `405`/ルート不一致は `404` に丸め、`CLAUDE.md` §4 のステータス集合を増やさない | ステータス体系の単純化 |
 | D-XCUT-05 | `traceId` 採番・MDC 設定・1 行リクエストログを単一の `RequestLoggingFilter` に集約し、Security フィルタより前段で実行 | 401 も `traceId` を持たせるため |
-| D-XCUT-06 | 構造化ログは Spring Boot 標準機能を使い、追加ライブラリを入れない | 依存を増やさない |
+| D-XCUT-06 | 構造化ログは Spring Boot 標準機能を使い、追加ライブラリ・`logback-spring.xml` を入れない | 依存・設定を増やさない |
 | D-XCUT-07 | `@Transactional` は Service の全 public メソッドに一律付与（読み取りは `readOnly=true`） | 境界の一貫性、`CLAUDE.md` §3 |
 | D-XCUT-08 | エラーコードの暫定集合（§3）を MVP 実装用に定義。命名規則の正式化は Phase 3（Q3） | 実装を止めない |
+| D-XCUT-09 | 構造化ログのフォーマットは **ECS**、出力先は標準出力（`logging.structured.format.console=ecs`）。Phase 5 で確定 | Spring Boot 標準対応フォーマットで最も成熟・フィールド意味論が明確、コンテナ/クラウド取り込みに素直 |
 
-- Bean の実クラス名・単体/結合テストのシナリオ、Structured Logging の具体設定は **Phase 3 / 5**。
+- Bean の実クラス名・単体/結合テストのシナリオは Phase 3 / 5 で確定。Structured Logging の具体設定は
+  Phase 5 で確定（D-XCUT-09、`application.yml` + `StructuredLoggingIntegrationTest`）。

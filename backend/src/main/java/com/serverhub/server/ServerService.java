@@ -9,6 +9,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
  * サーバー・タグの業務ロジック（詳細設計 03-server §5、BR-01〜BR-10）。
  *
  * <p>読み取りは {@code readOnly}、登録・編集・削除は個別に {@link Transactional} を付与する（05-cross-cutting）。
+ * 登録・編集・削除は「重要な業務イベント」として 1 行の {@code INFO} ログを出す。対象 ID のみで、ホスト名など 機密情報は含めない（05-cross-cutting
+ * §4.3、requirements §10.1.11「値そのものより ID を優先」）。
  */
 @Service
 @Transactional(readOnly = true)
 public class ServerService {
+
+  private static final Logger log = LoggerFactory.getLogger(ServerService.class);
 
   private final ServerDao serverDao;
   private final TagDao tagDao;
@@ -111,6 +117,7 @@ public class ServerService {
     Server inserted = serverDao.insert(toInsert).getEntity();
 
     replaceTags(inserted.id(), tagNames);
+    log.info("server created: id={}", inserted.id());
     return get(inserted.id());
   }
 
@@ -147,6 +154,7 @@ public class ServerService {
 
     serverTagDao.deleteByServerId(id);
     replaceTags(id, normalizeTags(request.tags()));
+    log.info("server updated: id={}", id);
     return get(id);
   }
 
@@ -158,6 +166,7 @@ public class ServerService {
       throw new ResourceNotFoundException("Server", id);
     }
     serverTagDao.deleteByServerId(id);
+    log.info("server deleted (logical): id={}", id);
   }
 
   private Server requireActive(Long id) {

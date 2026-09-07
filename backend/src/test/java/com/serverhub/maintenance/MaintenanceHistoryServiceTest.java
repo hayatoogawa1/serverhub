@@ -26,8 +26,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.seasar.doma.jdbc.Result;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class MaintenanceHistoryServiceTest {
 
   @Mock private MaintenanceHistoryDao maintenanceHistoryDao;
@@ -84,6 +86,30 @@ class MaintenanceHistoryServiceTest {
     assertThat(result.type()).isEqualTo(MaintenanceType.PATCH);
     assertThat(toInsert.getValue().id()).isNull();
     assertThat(toInsert.getValue().serverId()).isEqualTo(1L);
+  }
+
+  @Test
+  void create_emitsBusinessEventInfoLog(CapturedOutput output) {
+    when(serverDao.selectActiveById(1L)).thenReturn(Optional.of(activeServer(1L)));
+    MaintenanceHistory inserted =
+        new MaintenanceHistory(
+            100L,
+            1L,
+            LocalDate.of(2026, 9, 7),
+            MaintenanceType.PATCH,
+            "worker",
+            "content",
+            null,
+            null,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            null);
+    when(maintenanceHistoryDao.insert(any())).thenReturn(new Result<>(1, inserted));
+
+    service.create(createRequest(1L));
+
+    // 05-cross-cutting §4.3: 登録は ID のみの INFO ログ
+    assertThat(output.getOut()).contains("maintenance history created: id=100 serverId=1");
   }
 
   @Test

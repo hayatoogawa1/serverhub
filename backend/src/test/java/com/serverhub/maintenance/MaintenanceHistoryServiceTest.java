@@ -35,7 +35,7 @@ class MaintenanceHistoryServiceTest {
   @Mock private MaintenanceHistoryDao maintenanceHistoryDao;
   @Mock private ServerDao serverDao;
 
-  @InjectMocks private MaintenanceHistoryService service;
+  @InjectMocks private MaintenanceHistoryServiceImpl service;
 
   private static Server activeServer(long id) {
     return new Server(

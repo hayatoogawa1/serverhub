@@ -6,7 +6,6 @@ import com.serverhub.auth.CsrfCookieFilter;
 import com.serverhub.auth.JsonLoginAuthenticationFilter;
 import com.serverhub.auth.LoginFailureHandler;
 import com.serverhub.auth.LoginSuccessHandler;
-import com.serverhub.auth.ServerHubUserDetailsService;
 import jakarta.validation.Validator;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +18,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -61,7 +61,7 @@ public class SecurityConfig {
 
   @Bean
   AuthenticationManager authenticationManager(
-      ServerHubUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+      UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
     provider.setPasswordEncoder(passwordEncoder);
     return new ProviderManager(List.of(provider));

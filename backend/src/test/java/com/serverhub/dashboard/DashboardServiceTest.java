@@ -21,7 +21,7 @@ class DashboardServiceTest {
 
   @Mock private DashboardDao dashboardDao;
 
-  @InjectMocks private DashboardService service;
+  @InjectMocks private DashboardServiceImpl service;
 
   /** {@code getSummary()} は 5 つの DAO メソッドすべてを呼ぶため、各テストで一括スタブする。 */
   private void stub(
@@ -34,7 +34,7 @@ class DashboardServiceTest {
     when(dashboardDao.selectServerCountByEnvironment()).thenReturn(byEnvironment);
     when(dashboardDao.selectServerCountByStatus()).thenReturn(byStatus);
     when(dashboardDao.selectServerCountByTag()).thenReturn(byTag);
-    when(dashboardDao.selectRecentMaintenance(DashboardService.RECENT_MAINTENANCE_LIMIT))
+    when(dashboardDao.selectRecentMaintenance(DashboardServiceImpl.RECENT_MAINTENANCE_LIMIT))
         .thenReturn(recent);
   }
 

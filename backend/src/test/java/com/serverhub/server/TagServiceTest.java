@@ -18,11 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TagServiceTest {
 
   @Mock private TagDao tagDao;
-  @InjectMocks private TagService service;
+  @InjectMocks private TagServiceImpl service;
 
   @Test
   void suggest_trimsPrefixAndCapsLimit() {
-    when(tagDao.selectSuggest("we", TagService.SUGGEST_LIMIT)).thenReturn(List.of("web"));
+    when(tagDao.selectSuggest("we", TagServiceImpl.SUGGEST_LIMIT)).thenReturn(List.of("web"));
 
     assertThat(service.suggest("  we  ")).containsExactly("web");
   }

@@ -34,7 +34,7 @@ class ServerServiceTest {
   @Mock private TagDao tagDao;
   @Mock private ServerTagDao serverTagDao;
 
-  @InjectMocks private ServerService service;
+  @InjectMocks private ServerServiceImpl service;
 
   private static Server sampleServer(Long id, String hostname) {
     return new Server(

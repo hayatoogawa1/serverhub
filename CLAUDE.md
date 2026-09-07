@@ -261,10 +261,12 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   ⑥ログ仕上げ実装中: 構造化ログ ECS を標準出力へ有効化（D-XCUT-09）+ 業務イベント INFO ログ（§4.3）
   → [05-cross-cutting](docs/design/basic/05-cross-cutting.md) §4。これで Phase 5 Backend 実装は完了
 - 実サーバー連携（死活監視・構成自動取得等）は MVP 対象外・MVP 後の独立フェーズ → [open-issues E1](docs/requirements/open-issues.md)
-- Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 サーバー登録/編集/論理削除（#38）・
-  FE-4 メンテナンス履歴（#39）マージ済み。
-  FE-4.5 リファクタ（**横スライス化** = レイヤ別ディレクトリ + api 層を `interface` + `Impl` に）実装中 →
-  その後 FE-5 ダッシュボード。Backend の Service も別 PR で `interface` + `Impl` に分離予定。
+- **命名規約変更（オーナー指示）**: 実装クラスは `Impl` 末尾（§4）。
+  FE 横スライス化 + api 層 `interface`+`Impl`（#40 マージ済み）。
+  Backend の Service を `interface`+`Impl` に分離（ServerService/TagService/MaintenanceHistoryService/
+  DashboardService + ServerHubUserDetailsServiceImpl、#41）。Controller はインターフェースを DI（変更なし）
+- Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 登録/編集/論理削除（#38）・
+  FE-4 メンテナンス履歴（#39）・FE-4.5 横スライス化（#40）マージ済み。次は FE-5 ダッシュボード（新構成で）。
   FE のディレクトリ構造は [frontend/README.md](frontend/README.md)、Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）

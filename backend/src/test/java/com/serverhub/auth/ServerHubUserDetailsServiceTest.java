@@ -16,7 +16,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 class ServerHubUserDetailsServiceTest {
 
   private final UserDao userDao = mock(UserDao.class);
-  private final ServerHubUserDetailsService service = new ServerHubUserDetailsService(userDao);
+  private final ServerHubUserDetailsServiceImpl service =
+      new ServerHubUserDetailsServiceImpl(userDao);
 
   @Test
   void loadsExistingUserAsPrincipal() {

@@ -61,9 +61,7 @@ describe('LoginForm', () => {
     await user.type(screen.getByLabelText('パスワード'), 'password')
     await user.click(screen.getByRole('button', { name: 'ログイン' }))
 
-    expect(
-      await screen.findByText('メールアドレスの形式が正しくありません。'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('メールアドレスの形式が正しくありません。')).toBeInTheDocument()
     expect(onSuccess).not.toHaveBeenCalled()
   })
 })

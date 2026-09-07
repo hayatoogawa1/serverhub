@@ -24,8 +24,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   const serverFieldErrors = login.error?.fieldErrorMap() ?? {}
   // フィールド単位のエラーが無いもの（401 資格情報不正・500・形式不明の 400）は上部に表示
-  const topError =
-    login.error?.fieldErrors.length === 0 ? login.error.message : undefined
+  const topError = login.error?.fieldErrors.length === 0 ? login.error.message : undefined
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()

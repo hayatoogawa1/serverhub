@@ -4,19 +4,19 @@ import Button from '@mui/material/Button'
 import LinearProgress from '@mui/material/LinearProgress'
 import AddIcon from '@mui/icons-material/Add'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { PageHeader } from '@/components/PageHeader'
-import { Pagination } from '@/components/Pagination'
-import { StatePlaceholder } from '@/components/StatePlaceholder'
+import { PageHeader } from '@/components/common/PageHeader'
+import { Pagination } from '@/components/common/Pagination'
+import { StatePlaceholder } from '@/components/common/StatePlaceholder'
 import { useFeedback } from '@/components/feedback/context'
-import { ServerFormModal } from '@/features/servers/components/ServerFormModal'
-import { ServerListTable } from '@/features/servers/components/ServerListTable'
-import { useServersQuery } from '@/features/servers/hooks'
+import { ServerFormModal } from '@/components/servers/ServerFormModal'
+import { ServerListTable } from '@/components/servers/ServerListTable'
+import { useServersQuery } from '@/hooks/servers'
 import {
   parseServerListParams,
   serializeServerListParams,
   type ServerListParams,
-} from '@/features/servers/searchParams'
-import { ServerSearchBar } from '@/features/servers/components/ServerSearchBar'
+} from '@/url/serverListParams'
+import { ServerSearchBar } from '@/components/servers/ServerSearchBar'
 
 /** SC-03 サーバー一覧（検索・絞り込み・ソート・ページング、URL クエリ同期）。 */
 export function ServerListPage() {

@@ -4,20 +4,20 @@ import Button from '@mui/material/Button'
 import LinearProgress from '@mui/material/LinearProgress'
 import AddIcon from '@mui/icons-material/Add'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { PageHeader } from '@/components/PageHeader'
-import { Pagination } from '@/components/Pagination'
-import { ServerPicker } from '@/components/ServerPicker'
-import { StatePlaceholder } from '@/components/StatePlaceholder'
+import { PageHeader } from '@/components/common/PageHeader'
+import { Pagination } from '@/components/common/Pagination'
+import { ServerPicker } from '@/components/common/ServerPicker'
+import { StatePlaceholder } from '@/components/common/StatePlaceholder'
 import { useFeedback } from '@/components/feedback/context'
-import { MaintenanceHistoryFormModal } from '@/features/maintenance/components/MaintenanceHistoryFormModal'
-import { MaintenanceHistoryListTable } from '@/features/maintenance/components/MaintenanceHistoryListTable'
-import { useMaintenanceHistoriesQuery } from '@/features/maintenance/hooks'
+import { MaintenanceHistoryFormModal } from '@/components/maintenance/MaintenanceHistoryFormModal'
+import { MaintenanceHistoryListTable } from '@/components/maintenance/MaintenanceHistoryListTable'
+import { useMaintenanceHistoriesQuery } from '@/hooks/maintenance'
 import {
   parseMaintenanceListParams,
   serializeMaintenanceListParams,
-  toMaintenanceApiParams,
+  toMaintenanceListApiParams,
   type MaintenanceListParams,
-} from '@/features/maintenance/searchParams'
+} from '@/url/maintenanceListParams'
 
 /** SC-07 メンテナンス履歴一覧（全サーバー横断、サーバー絞り込み、URL クエリ同期）。 */
 export function MaintenanceHistoryListPage() {
@@ -25,7 +25,7 @@ export function MaintenanceHistoryListPage() {
   const feedback = useFeedback()
   const [searchParams, setSearchParams] = useSearchParams()
   const params = useMemo(() => parseMaintenanceListParams(searchParams), [searchParams])
-  const query = useMaintenanceHistoriesQuery(toMaintenanceApiParams(params))
+  const query = useMaintenanceHistoriesQuery(toMaintenanceListApiParams(params))
   const [createOpen, setCreateOpen] = useState(false)
 
   const update = (patch: Partial<MaintenanceListParams>, resetPage = true) => {

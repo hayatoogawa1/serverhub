@@ -64,15 +64,23 @@ Controller → Service → DAO(Doma) → PostgreSQL
 - 例外は `@RestControllerAdvice` の `GlobalExceptionHandler` で一元処理。統一エラーレスポンス（`code` / `message` / `traceId`）を返す。**StackTrace・内部情報をレスポンスに含めない。**
 - リクエストごとに `traceId` を MDC に載せ、全ログに出力する。
 
-### Frontend レイヤ責務
+### Frontend レイヤ責務（横スライス = レイヤ別ディレクトリ）
 
 ```
-Page → Feature → Component
-         ↘ Hook（TanStack Query ラップ）→ api/（関数群）→ apiClient（Axios）→ Backend
+pages/       画面（SC-01〜08）。features を組み立てる
+components/  UI 部品。common/ layout/ feedback/ + ドメイン別（auth/ servers/ maintenance/）
+hooks/       TanStack Query ラップ（useXxxQuery / useXxxMutation）。ドメインごとに 1 ファイル
+api/         HTTP。client（Axios 唯一のインスタンス）/ errors / queryKeys + ドメインごとに 1 ファイル
+types/       型（API DTO / ドメイン enum）。ドメインごとに 1 ファイル
+validation/  フォーム検証（server.ts / maintenance.ts）
+url/         URL クエリ ⇔ 型付きパラメータの変換
+utils/ constants/ app/（合成ルート）
 ```
 
-- **Axios を各コンポーネントから直接呼ばない。** `api/` 層経由。
-- 共通部品（Button / Modal / ConfirmDialog / DataTable / Pagination / StatusBadge / Tag / Loading / ErrorMessage / Notification 等）は **2 箇所目で必要になった時点で切り出す**。先行共通化・「似ているから」だけの共通化は禁止。
+- **Axios を各コンポーネントから直接呼ばない。** `api/` 層経由（ESLint で禁止）。
+- 依存の向き: `pages → components/hooks → api → client`。逆流させない。
+- 共通部品は **2 箇所目で必要になった時点で切り出す**。「似ているから」だけの共通化は禁止。
+- 詳細は [frontend/README.md](frontend/README.md) / [06-ui](docs/design/basic/06-ui.md)。
 
 ### 認証・認可
 
@@ -96,7 +104,10 @@ Page → Feature → Component
 ### 命名
 
 - Java: ベースパッケージは `com.serverhub`（確定）。以下、機能別にサブパッケージを切る。クラス/メソッドは英語、意図が伝わる名前。
-- TypeScript: コンポーネント PascalCase、hook は `useXxx`、API 関数は動詞始まり（`getServers` 等）。
+- **実装クラスは `Impl` 末尾**。単一実装でも `interface Xxx` + `class XxxImpl implements Xxx` に分ける。
+  - Backend: Service（`ServerService` + `ServerServiceImpl` …）。DAO は既に `@Dao interface`。Controller / Filter / Advice はフレームワークが具象前提のため対象外。
+  - Frontend: api 層（`interface ServersApi` + `class ServersApiImpl` + `export const serversApi`）。React hook・純粋関数モジュール・コンポーネントは対象外（クラスでないため）。
+- TypeScript: コンポーネント PascalCase、hook は `useXxx`、API メソッドは動詞始まり（`getServers` 等）。api 層のシングルトンは `xxxApi`。
 - DB: テーブル・カラムは snake_case、複数形テーブル名。
 - API パス: `/api/v1/...`（URL パスバージョニング。確定 → [02-api](docs/design/basic/02-api.md)）。リソースは複数形・ケバブケース（`/servers` / `/maintenance-histories`）。
 - API レスポンス: 成功は軽量形式（単一 = 素の JSON、ページング一覧 = `{ content, page }`）。エラーは `{ code, message, traceId (+ errors[]) }`。JSON キーは `camelCase`、日時は ISO 8601。
@@ -250,11 +261,11 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   ⑥ログ仕上げ実装中: 構造化ログ ECS を標準出力へ有効化（D-XCUT-09）+ 業務イベント INFO ログ（§4.3）
   → [05-cross-cutting](docs/design/basic/05-cross-cutting.md) §4。これで Phase 5 Backend 実装は完了
 - 実サーバー連携（死活監視・構成自動取得等）は MVP 対象外・MVP 後の独立フェーズ → [open-issues E1](docs/requirements/open-issues.md)
-- Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 サーバー登録/編集/論理削除（#38）マージ済み。
-  FE-4 メンテナンス履歴（SC-07 全体一覧 + SC-08 登録モーダル + サーバー詳細からの登録・`ServerPicker` 追加・
-  履歴は登録/参照のみで編集削除 UI なし）実装中。次は FE-5 ダッシュボード。
-  FE のレイヤ構造（機能ごとの縦スライス）は [frontend/README.md](frontend/README.md)、
-  Stitch 仕様 vs Backend の差分は [06-ui §10](docs/design/basic/06-ui.md)（D-UI-06〜08 + FE-1〜4 差分表）
+- Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 サーバー登録/編集/論理削除（#38）・
+  FE-4 メンテナンス履歴（#39）マージ済み。
+  FE-4.5 リファクタ（**横スライス化** = レイヤ別ディレクトリ + api 層を `interface` + `Impl` に）実装中 →
+  その後 FE-5 ダッシュボード。Backend の Service も別 PR で `interface` + `Impl` に分離予定。
+  FE のディレクトリ構造は [frontend/README.md](frontend/README.md)、Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

@@ -15,6 +15,9 @@ export interface PageMeta {
   totalPages: number
 }
 
+/** 一覧のソート方向（02-api §2.5）。 */
+export type SortOrder = 'asc' | 'desc'
+
 /** 統一エラーエンベロープ。`errors` は 400（バリデーション）のときのみ。 */
 export interface ApiErrorBody {
   code: string

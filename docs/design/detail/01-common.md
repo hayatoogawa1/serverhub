@@ -80,6 +80,10 @@ public PageResponse<ServerSummaryResponse> list(
 - 未定義の値（例 `sort=foo`）が来ると Spring は `MethodArgumentTypeMismatchException` を投げる。
   `GlobalExceptionHandler` にこれを **`400` / `VALIDATION_ERROR`** として追加する
   （[05-cross-cutting §2.2](../basic/05-cross-cutting.md) の表に対する追補、§3 参照）。
+- 上のコード例は概念図。実際の API クエリ表記は camelCase / 小文字（`sort=updatedAt`、`order=desc`、
+  `environment=production`）のため、enum の `Enum.valueOf` 直バインドではなく `fromValue` に委譲する
+  `@Component` な `Converter<String, …>` を機能パッケージ側に置く（Phase 5 で確定、[03-server §1](03-server.md)）。
+  変換失敗時に `MethodArgumentTypeMismatchException` になる点は同じ。
 - 論理ソートキー（`ServerSortKey`）から実際の Doma/SQL 列への解決は各機能の DAO/SQL 側の責務
   （例: `switch` 式や SQL の `/*%if*/` 分岐）。共通層は「型で受けて `400` を自動化する」ところまで。
 - ホワイトリスト管理表（`common/page` の固定マップ、[01-architecture §2.2](../basic/01-architecture.md)）は
@@ -200,7 +204,7 @@ requirements §10.1.6 のとおり Controller の Bean Validation（`@Valid`）�
 | D-DETAIL-01 | `sort`/`order`/enum フィルタは Java `enum` に直接バインドし、`MethodArgumentTypeMismatchException` を `400`/`VALIDATION_ERROR` として扱う。専用ホワイトリスト判定コードを書かない | 02-api §2.5 の実装を最小コードで満たす |
 | D-DETAIL-02 | IP アドレスは Commons Validator `InetAddressValidator`、ホスト名は `@Pattern`（RFC 1123 準拠）。`commons-validator` を新規依存に追加 | requirements §10.1.1/§10.1.6 |
 | D-DETAIL-03 | エラーコードは単一フラット名前空間、`UPPER_SNAKE_CASE`、一覧は本書に一元管理（Q3 確定） | MVP 規模に見合う簡潔さ |
-| D-DETAIL-04 | enum カラムは DB 値（小文字）と Java 側命名（大文字）を分離する変換レイヤーを設ける。実装クラスは Phase 5 で確定 | Java の命名慣習を DB のために崩さない |
+| D-DETAIL-04 | enum カラムは DB 値（小文字）と Java 側命名（大文字）を分離する変換レイヤーを設ける。Phase 5 で実装方式を確定：enum は変えず `@ExternalDomain` な `DomainConverter<E,String>` + `@DomainConverters` 集約クラス + 注釈処理オプション `-Adoma.domain.converters`（詳細は [03-server §1](03-server.md)） | Java の命名慣習を DB のために崩さない |
 | D-DETAIL-05 | 監査列は Doma `EntityListener` で自動設定し、Service 層に重複コードを書かない | 03-data-model §4.8 の正式化 |
 
 - `GlobalExceptionHandler` への `MethodArgumentTypeMismatchException` 追加は、05-cross-cutting §2.2 の

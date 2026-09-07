@@ -243,6 +243,8 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Q3（エラーコード体系: 単一フラット名前空間・UPPER_SNAKE_CASE・一覧は 01-common に一元管理）確定 → [01-common](docs/design/detail/01-common.md)（D-DETAIL-03）
 - Phase 3 詳細設計 完了（00〜05 全 6 文書 v1.0）→ [docs/design/detail/](docs/design/detail/)
 - Phase 4 DB 設計 完了（物理スキーマ設計 + Flyway `V1__init.sql`）→ [docs/db/](docs/db/)
+- Phase 5 Backend 実装 進行中: ①common 基盤（PR #29）・②auth（PR #30）マージ済み。③server+tag 実装中
+  （D-DETAIL-04 の Doma enum 変換方式を確定、`server_tags` に最小 Entity を置く D-SRV-06）→ [03-server](docs/design/detail/03-server.md)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

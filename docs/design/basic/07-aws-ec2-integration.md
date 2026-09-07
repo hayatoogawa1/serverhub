@@ -7,8 +7,8 @@
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
 
-> **実装進捗**: 9-1（#48）・9-2（#49）・9-3（#50）・9-4（FE 明細、#51）完了。
-> 9-5 実装中（一覧に「AWS 実行状態」列 + MSW + テスト）。9-6（AWS IAM 文書）が残り。
+> **実装完了**: 9-1（#48）・9-2（#49）・9-3（#50）・9-4（FE 明細、#51）・9-5（FE 一覧列、#52）・
+> 9-6（AWS IAM 文書 + `infra/aws/`、#53）。Phase 9 = FR-CLOUD-01 完了。
 
 ---
 
@@ -374,7 +374,10 @@ implementation("software.amazon.awssdk:ec2")
 
 ---
 
-## 8. AWS IAM 変更案
+## 8. AWS IAM（9-6 で実装）
+
+**実体は [`infra/aws/README.md`](../../../infra/aws/README.md) + [`infra/aws/iam-policy-serverhub-ec2-readonly.json`](../../../infra/aws/iam-policy-serverhub-ec2-readonly.json)。**
+本節はその設計根拠。
 
 ### 8.1 権限（最小権限、C7）
 

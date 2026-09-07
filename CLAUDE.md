@@ -303,7 +303,11 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
     （`ServerServiceImpl` が読み取り専用 `CloudLinkReader` で合成、一覧は `selectByServerIds` で N+1 回避）。
     `CLOUD_LINK_CONFLICT`(409)・`CLOUD_PROVIDER_UNAVAILABLE`(503) を `ErrorCode`/`CloudExceptionHandler` に追加。
     BE 111 → 134。既存不変（`servers`/`Status`/`servers.status` 無変更、レスポンスはフィールド追加のみ）
-  - 9-4: FE `types/cloud` `api/cloud` `hooks/cloud` `CloudStateChip` + `ServerDetailView` の分離表示 + `CloudLinkFormModal`
+  - **9-4 完了**: FE `types/cloud` / `api/cloud`（interface+Impl）/ `hooks/cloud` / `validation/cloudLink` /
+    `CloudStateChip`（`StatusChip` と別デザイン）/ `CloudLinkPanel`（明細の独立セクション「AWS 連携」、
+    `ServerDetailView` は無変更 = `StatusChip` そのまま）/ `CloudLinkFormModal`。refresh の二重送信防止・
+    AWS 失敗 200 でキャッシュ表示 + lastError・503 のみエラートースト・未連携は「AWS 未連携」。
+    FE テスト 123 → 147。既存不変（cloudLink/cloudState はすべて optional）
   - 9-5: FE 一覧 AWS 列 + MSW + 仕上げ
   - 9-6: AWS IAM ポリシー文書 + デプロイ手順
   不変条件: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は `ec2:DescribeInstances` のみ・

@@ -7,10 +7,10 @@
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
 
-> **実装進捗**: 9-1（DB/Entity/DAO/enum、#48）・9-2（provider + poller + AWS SDK、#49）完了。
-> 9-3 実装中（`CloudLinkController` + `CloudLinkServiceImpl` + `PUT/DELETE /servers/{id}/cloud-link` + `refresh` +
-> `cloudLink` を detail、`cloudState`/`cloudStateFetchedAt` を一覧に追加。合成は `ServerServiceImpl` +
-> 読み取り専用 `CloudLinkReader`。`CLOUD_LINK_CONFLICT`(409) / `CLOUD_PROVIDER_UNAVAILABLE`(503)）。
+> **実装進捗**: 9-1（DB/Entity/DAO/enum、#48）・9-2（provider + poller + AWS SDK、#49）・
+> 9-3（cloud-link API + レスポンス合成、#50）完了。
+> 9-4 実装中（FE: `types/cloud` `api/cloud` `hooks/cloud` `validation/cloudLink`、`CloudStateChip`、
+> `CloudLinkPanel`（明細の「AWS 連携」セクション = 管理ステータスと分離）、`CloudLinkFormModal`）。
 
 ---
 
@@ -332,25 +332,27 @@ implementation("software.amazon.awssdk:ec2")
 
 すべて加算的。既存 123 テストを維持（C9）。**FE は AWS を直接呼ばない**（Backend 経由のみ）→ CSP 変更不要。
 
-### 7.1 型・API・hook
+### 7.1 型・API・hook（9-4 で実装）
 
-| ファイル | 変更 |
+| ファイル | 内容 |
 |---|---|
-| `types/cloud.ts`（新規） | `CloudInstanceState` union、`CLOUD_STATE_LABELS`、`CloudLink` interface |
-| `types/server.ts` | `ServerDetail` に `cloudLink?: CloudLink \| null`、`ServerSummary` に `cloudState?` / `cloudStateFetchedAt?` |
-| `api/cloud.ts`（新規、`interface CloudApi` + `CloudApiImpl` + `cloudApi`、§4 命名規約） | `setCloudLink(serverId, body)` / `deleteCloudLink(serverId)` / `refreshCloudState(serverId)` |
-| `hooks/cloud.ts`（新規） | `useSetCloudLinkMutation(serverId)` / `useDeleteCloudLinkMutation(serverId)` / `useRefreshCloudStateMutation(serverId)`。成功時 `['servers','detail',id]` と `['servers']` を invalidate |
+| `types/cloud.ts`（新規） | `CloudInstanceState` union（7 値）、`CLOUD_STATE_LABELS`、`CLOUD_STATE_TONE`（色グループ）、`CloudProvider`、`CloudLink` / `CloudLinkBody` / `CloudLinkFormValues`、`toCloudInstanceState`（未知値 → `unknown`） |
+| `types/server.ts` | `ServerDetail` に `cloudLink?: CloudLink \| null`、`ServerSummary` に `cloudState?` / `cloudStateFetchedAt?`（すべて optional、既存契約を壊さない） |
+| `types/api.ts` | `ERROR_CODES` に `CLOUD_LINK_CONFLICT` / `CLOUD_PROVIDER_UNAVAILABLE` |
+| `api/cloud.ts`（新規、`interface CloudApi` + `CloudApiImpl` + `cloudApi`、§4 命名規約） | `setCloudLink` / `deleteCloudLink` / `refreshCloudState`。**FE は AWS を直接呼ばない** |
+| `hooks/cloud.ts`（新規） | `useSetCloudLinkMutation` / `useDeleteCloudLinkMutation` / `useRefreshCloudStateMutation`。成功時 `setQueryData` で `servers.detail(id).cloudLink` を差し替え + `['servers']` invalidate（別クエリは作らない） |
+| `validation/cloudLink.ts`（新規） | インスタンス ID 形式（Backend の `@Pattern` と同一）、リージョン形式、`toCloudLinkBody` |
 
-### 7.2 コンポーネント
+### 7.2 コンポーネント（9-4 で実装）
 
-| ファイル | 変更 |
+| ファイル | 内容 |
 |---|---|
-| `components/servers/CloudStateChip.tsx`（新規） | `state` → ラベル + 色。running=success / stopped=default / pending・stopping=warning / terminated・gone=error / unknown=neutral。`role="img"` + `aria-label` |
-| `components/servers/ServerDetailView.tsx` | **明確に分離した 2 ブロック**（C4）:<br>・「管理ステータス」= 既存 `StatusChip`（人が変更、B2）<br>・「AWS 実行状態」= `CloudStateChip` +「最終取得 HH:MM」+ `stale` バッジ + `lastError` の注記 +「今すぐ更新」ボタン + 「AWS 連携を編集 / 解除」<br>紐付けなしなら「AWS 未連携」+「連携する」ボタンのみ |
-| `components/servers/CloudLinkFormModal.tsx`（新規） | インスタンス ID（必須、`i-` 形式）+ リージョン（既定値プリセット）。409 は「このインスタンスは別のサーバーに連携済みです」 |
-| `components/servers/ServerListTable.tsx` | 「AWS」列を追加（紐付けありの行だけ `CloudStateChip` を小さく表示、なければ「-」）。既存テストは特定列の**不在**のみ検証しているため影響なし（C9） |
-| `pages/ServerDetailPage.tsx` | モーダルの開閉状態を管理（D-UI-02: モーダルは URL 同期しない） |
+| `components/servers/CloudStateChip.tsx`（新規） | `state` → ラベル + 色。**`StatusChip`（枠線 + 色ドット）とは意図的に別デザイン（塗りつぶし）**。`role="img"` + `aria-label="AWS 実行状態: …"` |
+| `components/servers/CloudLinkPanel.tsx`（新規） | 明細の**独立セクション「AWS 連携」**（`ServerDetailView` は無変更）。未連携 → 「AWS 未連携」+「連携する」。連携済み → provider / インスタンス ID（コピー）/ リージョン / 「AWS 実行状態」行（`CloudStateChip` +「最終取得 …」+ `stale` バッジ + `lastError` の注記 + 「管理ステータスとは別」の注記）+「今すぐ更新」（`isPending` で二重送信防止）+「連携を編集」/「連携を解除」（確認ダイアログ） |
+| `components/servers/CloudLinkFormModal.tsx`（新規） | インスタンス ID（必須、`i-` 形式）+ リージョン（既定 `ap-northeast-1` プリセット）。409 `CLOUD_LINK_CONFLICT` は externalId フィールドに表示 |
+| `pages/ServerDetailPage.tsx` | `ServerDetailView` と履歴セクションの間に `<CloudLinkPanel>` を配置。`ServerDetailView`（管理情報）は無変更 = `StatusChip` はそのまま |
 | `pages/DashboardPage.tsx` | **変更なし**（§1.3） |
+| `components/servers/ServerListTable.tsx` | 9-5 で「AWS」列を追加 |
 
 ### 7.3 表示ルール（C4 / C5）
 

@@ -6,6 +6,8 @@ import com.serverhub.common.web.RequestLoggingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * doma-spring-boot が変換）の両方を受ける（05-cross-cutting §1.3）。
  */
 @RestControllerAdvice
+@Order(Ordered.LOWEST_PRECEDENCE - 10)
 public class ServerExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(ServerExceptionHandler.class);

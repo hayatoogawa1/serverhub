@@ -15,11 +15,11 @@ import org.springframework.stereotype.Service;
  * BadCredentialsException} に正規化するため、 「メールアドレス不存在」と「パスワード誤り」は同じ 401 になる（requirements §10.1.2）。
  */
 @Service
-public class ServerHubUserDetailsService implements UserDetailsService {
+public class ServerHubUserDetailsServiceImpl implements UserDetailsService {
 
   private final UserDao userDao;
 
-  public ServerHubUserDetailsService(UserDao userDao) {
+  public ServerHubUserDetailsServiceImpl(UserDao userDao) {
     this.userDao = userDao;
   }
 

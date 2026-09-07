@@ -250,9 +250,10 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   ⑥ログ仕上げ実装中: 構造化ログ ECS を標準出力へ有効化（D-XCUT-09）+ 業務イベント INFO ログ（§4.3）
   → [05-cross-cutting](docs/design/basic/05-cross-cutting.md) §4。これで Phase 5 Backend 実装は完了
 - 実サーバー連携（死活監視・構成自動取得等）は MVP 対象外・MVP 後の独立フェーズ → [open-issues E1](docs/requirements/open-issues.md)
-- Phase 6 Frontend: FE-1 基盤（PR #36）マージ済み。FE-2 サーバー参照（一覧・検索・絞り込み・ソート・
-  ページング・URL クエリ同期・詳細・メンテ履歴セクション表示）実装中。
-  Stitch 仕様 vs Backend の差分は [06-ui §10](docs/design/basic/06-ui.md)（D-UI-06〜08 + 差分表）に整理済み
+- Phase 6 Frontend: FE-1 基盤（PR #36）・FE-2 サーバー参照（PR #37）マージ済み。
+  FE-3 サーバー登録・編集・論理削除（`ServerFormModal` 共用・`Modal`/`ConfirmDialog` 追加・
+  409 DUPLICATE_HOSTNAME / OPTIMISTIC_LOCK_CONFLICT 処理・version ラウンドトリップ）実装中。
+  Stitch 仕様 vs Backend の差分は [06-ui §10](docs/design/basic/06-ui.md)（D-UI-06〜08 + FE-1〜3 差分表）に整理済み
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

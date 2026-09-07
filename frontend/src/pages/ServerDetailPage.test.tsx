@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { authenticatedHandlers } from '@/mocks/handlers'
@@ -61,5 +62,49 @@ describe('ServerDetailPage', () => {
     renderDetail('/servers/1')
 
     expect(await screen.findByText('登録されたメンテナンス履歴はありません')).toBeInTheDocument()
+  })
+
+  it('編集ボタンでフォームモーダルが開く', async () => {
+    server.use(...authenticatedHandlers, ...serverHandlers())
+    const user = userEvent.setup()
+    renderDetail('/servers/1')
+    await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
+
+    await user.click(screen.getByRole('button', { name: '編集' }))
+
+    expect(await screen.findByRole('heading', { name: /サーバーを編集/ })).toBeInTheDocument()
+  })
+
+  it('削除は確認ダイアログ経由・成功で一覧へ遷移（「retired へ移行」表現を使わない）', async () => {
+    const spy: { deleteCalled?: boolean } = {}
+    server.use(...authenticatedHandlers, ...serverHandlers({ spy, deleteOutcome: 'success' }))
+    const user = userEvent.setup()
+    renderDetail('/servers/1')
+    await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
+
+    await user.click(screen.getByRole('button', { name: '削除' }))
+    const dialogText = await screen.findByText(
+      /削除後は一覧・検索・ダッシュボード集計から除外されます/,
+    )
+    expect(dialogText).toBeInTheDocument()
+    expect(screen.queryByText(/retired/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/除籍/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '台帳から削除する' }))
+
+    expect(await screen.findByText('SERVER LIST')).toBeInTheDocument()
+    await waitFor(() => expect(spy.deleteCalled).toBe(true))
+  })
+
+  it('削除の 404 はトースト表示（ダイアログは閉じる）', async () => {
+    server.use(...authenticatedHandlers, ...serverHandlers({ deleteOutcome: 'not-found' }))
+    const user = userEvent.setup()
+    renderDetail('/servers/1')
+    await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
+
+    await user.click(screen.getByRole('button', { name: '削除' }))
+    await user.click(await screen.findByRole('button', { name: '台帳から削除する' }))
+
+    expect(await screen.findByText('対象が見つかりません。')).toBeInTheDocument()
   })
 })

@@ -29,6 +29,44 @@ export interface ServerDetail {
   updatedAt: string
 }
 
+/**
+ * サーバー登録リクエストボディ（Backend `ServerCreateRequest`）。
+ * 必須は hostname / environment / status のみ（B3）。任意項目は未入力なら `null` を送る。
+ */
+export interface ServerCreateBody {
+  hostname: string
+  ipAddress: string | null
+  environment: Environment
+  status: Status
+  description: string | null
+  os: string | null
+  osVersion: string | null
+  virtualizationType: VirtualizationType | null
+  location: string | null
+  owner: string | null
+  tags: string[]
+}
+
+/** サーバー編集リクエストボディ（Backend `ServerUpdateRequest` = Create + `version`）。 */
+export interface ServerUpdateBody extends ServerCreateBody {
+  version: number
+}
+
+/** フォームの編集中の値（enum は未選択を許すため空文字を含む）。 */
+export interface ServerFormValues {
+  hostname: string
+  ipAddress: string
+  environment: Environment | ''
+  status: Status | ''
+  description: string
+  os: string
+  osVersion: string
+  virtualizationType: VirtualizationType | ''
+  location: string
+  owner: string
+  tags: string[]
+}
+
 /** サーバー一覧のソート可能キー（Backend のホワイトリストと一致、F1）。 */
 export const SERVER_SORT_KEYS = [
   'hostname',

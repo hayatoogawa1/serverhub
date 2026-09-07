@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-file.py\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-file.py\""
           }
         ]
       }

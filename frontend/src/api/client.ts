@@ -30,7 +30,8 @@ type UnauthorizedHandler = () => void
 let unauthorizedHandler: UnauthorizedHandler | null = null
 
 /**
- * `/auth/login` 以外で 401 が返ったときに呼ばれるハンドラを登録する（App 起動時に 1 度だけ）。
+ * 認証エンドポイント以外で 401 が返った（＝セッション切れ）ときに呼ばれるハンドラを
+ * 登録する（App 起動時に 1 度だけ）。
  *
  * 06-ui D-UI-03: インターセプタから `navigate()` はせず、`['auth','me']` を invalidate して
  * `AuthGuard` に宣言的にリダイレクトさせる。ルーティングの命令的分散を避ける。
@@ -44,7 +45,10 @@ apiClient.interceptors.response.use(
   (error: unknown) => {
     if (error instanceof AxiosError && error.response?.status === 401) {
       const url = error.config?.url ?? ''
-      if (!url.endsWith('/auth/login')) {
+      // 認証エンドポイント自身（/auth/me・/auth/login・/auth/logout）の 401 は
+      // 呼び出し側（LoginForm / useAuthQuery）が扱う。ここで `['auth','me']` を
+      // invalidate すると、未認証時に `/auth/me` が自分自身を無限に再取得してしまう。
+      if (!url.includes('/auth/')) {
         unauthorizedHandler?.()
       }
     }

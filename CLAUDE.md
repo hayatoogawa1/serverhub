@@ -290,11 +290,13 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Phase 9 AWS: 最重要要件は **AWS EC2 実行状態の参照**（FR-CLOUD-01）。設計は
   [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)（**PR #47 で確定**、論点 P1〜P15 承認）。
   実装 PR 9-1〜9-6:
-  - **9-1**: DB `V3__cloud_links.sql`（`server_cloud_links`）+ `ServerCloudLink` Entity/Listener/`ServerCloudLinkDao` +
-    `CloudProvider`/`CloudInstanceState` enum + Converter（`DomainConvertersProvider` に登録）。
-    Testcontainers DAO テスト。BE 89 → 102（+13）。既存不変。
-  - 9-2: `CloudStateProvider` interface + `Ec2*Impl` + `Disabled*Impl` + `@Scheduled` ポーラー + AWS SDK v2 +
-    `serverhub.cloud.*`（既定 `enabled=false`）
+  - **9-1 完了（#48）**: DB `V3__cloud_links.sql`（`server_cloud_links`）+ `ServerCloudLink` Entity/Listener/`ServerCloudLinkDao` +
+    `CloudProvider`/`CloudInstanceState` enum + Converter（`DomainConvertersProvider` に登録）。BE 89 → 102。既存不変。
+  - **9-2 完了**: `CloudStateProvider` interface + `Ec2CloudStateProviderImpl`（`@ConditionalOnProperty enabled=true`、
+    `ec2:DescribeInstances` のみ、`url-connection-client`）+ `DisabledCloudStateProviderImpl`（既定、常に 503 相当）+
+    `CloudStatePoller`（`@Scheduled`、`enabled=true` のみ、失敗時 `last_error` のみ・状態据え置き）+ `CloudProperties`
+    （`serverhub.cloud.*`、既定 `enabled=false`）+ AWS SDK v2 `ec2` + `ServerCloudLinkDao` にポーラー用メソッド。
+    BE 102 → 111。既存不変。ローカル/CI は AWS 非接続
   - 9-3: `CloudLinkController` + `CloudLinkServiceImpl` + `PUT/DELETE /servers/{id}/cloud-link` + `refresh`（200）+
     `cloudLink` を `ServerDetailResponse`、`cloudState`/`cloudStateFetchedAt` を `ServerSummaryResponse` に追加
     （`ServerServiceImpl` で合成、一覧は `selectByServerIds` で N+1 回避）+ `409 CLOUD_LINK_CONFLICT`

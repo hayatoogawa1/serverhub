@@ -7,7 +7,8 @@
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
 
-> **実装進捗**: 9-1（DB `V3 server_cloud_links` + `ServerCloudLink` Entity/DAO + `CloudProvider`/`CloudInstanceState` enum + Converter）実装中。
+> **実装進捗**: 9-1 完了（DB `V3` + Entity/DAO + enum + Converter、#48）。
+> 9-2 実装中（`CloudStateProvider` interface + `Ec2*`/`Disabled*` impl + `CloudStatePoller` + AWS SDK v2 + `serverhub.cloud.*` 既定 OFF）。
 
 ---
 
@@ -263,21 +264,26 @@ CloudStatePoller   @Scheduled（@ConditionalOnProperty "serverhub.cloud.enabled"
      `last_error` / `last_error_at` を記録（C5/C6）。指数バックオフで次周期。
 5. すべて構造化ログ（`traceId` 付き、[05-cross-cutting](05-cross-cutting.md)）。秘密情報は出さない。
 
-### 6.4 設定（`application.yml` / 環境変数）
+### 6.4 設定（`application.yml` / 環境変数）— 9-2 で実装
 
 ```yaml
 serverhub:
   cloud:
-    enabled: false                 # 既定 OFF。ローカル・CI は false
+    enabled: ${SERVERHUB_CLOUD_ENABLED:false}   # 既定 OFF。ローカル・CI は false
     poll-interval: PT5M
-    staleness-threshold: PT15M      # これを超えたら stale=true
+    staleness-threshold: PT15M                   # これを超えたら stale=true（9-3 で使用）
     aws:
-      region: ap-northeast-1
-      # 認証は AWS SDK 既定のクレデンシャルチェーン（本番は IAM ロール、§8）
+      region: ${SERVERHUB_CLOUD_AWS_REGION:ap-northeast-1}
+      batch-size: 100                            # DescribeInstances 1 回あたり（AWS 上限）
 ```
 
+- `CloudProperties`（`@ConfigurationProperties("serverhub.cloud")`、record）。`CloudConfig` が常に登録。
+  スケジューリング（`@EnableScheduling`）と `CloudStatePoller`・`Ec2CloudStateProviderImpl` は
+  `enabled=true` のときだけ Bean 化（`@ConditionalOnProperty`）。`enabled=false`（既定）は
+  `DisabledCloudStateProviderImpl` のみ。
 - ローカルで実 AWS を試したい開発者は `SERVERHUB_CLOUD_ENABLED=true` + `AWS_PROFILE` 等（SDK 標準）。
-- 静的キーはリポジトリ・DB・`.env`（コミット対象）に置かない（BR-11 / §10.1.9）。
+- 静的キーはリポジトリ・DB・`.env`（コミット対象）に置かない（BR-11 / §10.1.9）。`.env.example` は
+  region と enabled のコメントのみ。
 
 ### 6.5 依存追加
 

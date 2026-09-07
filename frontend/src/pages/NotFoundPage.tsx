@@ -1,15 +1,20 @@
-import Container from '@mui/material/Container'
-import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
+import { Link as RouterLink } from 'react-router-dom'
+import { StatePlaceholder } from '@/components/StatePlaceholder'
 
+/** SC-404 Not Found（不正な URL）。 */
 export function NotFoundPage() {
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        ページが見つかりません
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        404 Not Found
-      </Typography>
-    </Container>
+    <StatePlaceholder
+      type="notfound"
+      title="ページが見つかりません"
+      description="指定されたページは存在しないか、移動しました。"
+      fullheight
+      actionButton={
+        <Button component={RouterLink} to="/" variant="outlined">
+          ダッシュボードへ戻る
+        </Button>
+      }
+    />
   )
 }

@@ -20,6 +20,9 @@ export const apiClient: AxiosInstance = axios.create({
   },
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
+  // 配列パラメータは `tags=a&tags=b`（ブラケットなし・繰り返し）で送る。
+  // Spring の `@RequestParam List<String>` が期待する形式（結合テストで実証済み）。
+  paramsSerializer: { indexes: null },
 })
 
 type UnauthorizedHandler = () => void

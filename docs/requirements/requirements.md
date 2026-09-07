@@ -1422,6 +1422,9 @@ flowchart TD
   API を再利用可能な形にしておく（§5.3）。認証方式（セッション）は外部連携時に見直しが必要。
   - 実サーバーとの連携（死活監視・構成情報の自動取得・ステータス自動更新等）は
     **MVP 完了後の独立フェーズ**で扱う（[open-issues.md](open-issues.md) E1）。MVP では拡張シームの確保に留める。
+  - AWS EC2 の実行状態参照は **Phase 9** で正式設計する。既存設計への影響は調査済みで破壊的変更は不要
+    （[open-issues.md](open-issues.md) E2 / [探索ドキュメント](../design/exploration/01-aws-ec2-integration-impact.md)）。
+    **AWS の実行状態（`running`/`stopped` 等）で ServerHub の管理 `status` を上書きしない。**
 
 ## 15. 移行要件
 

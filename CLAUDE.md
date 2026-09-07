@@ -192,8 +192,9 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 物理スキーマ設計 [docs/db/01-schema.md](docs/db/01-schema.md) と Flyway マイグレーション
 [`V1__init.sql`](backend/src/main/resources/db/migration/V1__init.sql) はともに v1.0 確定（PR #26〜#27、
 CI の Testcontainers で実 PostgreSQL への適用を確認済み）。
-Phase 5 は詳細設計 [docs/design/detail/](docs/design/detail/) 02〜05 の Entity/DAO/DTO/エラー設計を
-`backend/src/main/java/com/serverhub/` の実クラスに落とす（進め方は未確定 → オーナーと相談）。
+Phase 5 は詳細設計 [docs/design/detail/](docs/design/detail/) 01〜05 の Entity/DAO/DTO/エラー設計を
+`backend/src/main/java/com/serverhub/` の実クラスに落とす。1 機能 = 1 `feature/*` ブランチ = 1 PR で進める
+（①common→②auth→③server+tag→④maintenance→⑤dashboard、進捗は §11）。
 
 ---
 
@@ -244,9 +245,10 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
 - Phase 3 詳細設計 完了（00〜05 全 6 文書 v1.0）→ [docs/design/detail/](docs/design/detail/)
 - Phase 4 DB 設計 完了（物理スキーマ設計 + Flyway `V1__init.sql`）→ [docs/db/](docs/db/)
 - Phase 5 Backend 実装 進行中: ①common 基盤（PR #29）・②auth（PR #30）・③server+tag（PR #31）マージ済み。
-  ④maintenance（メンテナンス履歴）実装中（`maintenance` → `server` の `ServerDao` 依存を許容 D-MNT-03、
-  種別 enum に `MaintenanceTypeConverter` を追加）→ [04-maintenance](docs/design/detail/04-maintenance.md)。
-  残り ⑤dashboard → [05-dashboard](docs/design/detail/05-dashboard.md)
+  ④maintenance（メンテナンス履歴、PR #32）マージ済み。
+  ⑤dashboard（簡易ダッシュボード集計）実装中（集計は 1 セクション 1 クエリ・0 件補完と上位 N 件切り出しは
+  Service 側 D-DASH-01、集計行 record は DAO 射影とレスポンスで共用 D-DASH-04）
+  → [05-dashboard](docs/design/detail/05-dashboard.md)。Phase 5 Backend 実装はこれで一通り完了予定
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

@@ -117,5 +117,17 @@ public record DashboardSummaryResponse(
 | D-DASH-01 | 0 件区分の補完・上位10件+その他の切り出しは SQL でなく Service（Java）側で行う | enum 定義を「全区分」の唯一の情報源にする、SQL を複雑にしない |
 | D-DASH-02 | `dashboard` は `server`/`maintenance` の enum 型への依存を許容する（DTO への依存とは区別） | 集計機能の性質上、安定した値型への依存は軽い結合 |
 | D-DASH-03 | 「直近のメンテナンス」は削除済みサーバーを除外（フラグ付きで見せるのではなく JOIN で除外）。04-maintenance の一覧 DTO は再利用しない | BR-09、04-maintenance の全体一覧（F4）との役割の違いを型で表現 |
+| D-DASH-04 | `EnvironmentCount` / `StatusCount` / `TagCount` は `dashboard` パッケージのトップレベル record（`@Entity(immutable = true)`）を 1 つだけ定義し、`DashboardDao` の射影と `DashboardSummaryResponse` のフィールド型を兼ねる（§4 のネスト定義は実装では共通化）。`RecentMaintenanceRow`（DAO）と `RecentMaintenanceItem`（レスポンス、`DashboardSummaryResponse` のネスト record）は D-DASH-03 のとおり分離を維持 | 2 フィールドの値型で二重管理しない（D-DASH-01 と同じ方針）。削除済みフラグの有無という意味の違いがある型のみ分ける |
 
-Phase 3 詳細設計はこの文書で最後（00-overview §5）。SQL ファイルの正確な列名は Phase 4 で最終化する。
+Phase 3 詳細設計はこの文書で最後（00-overview §5）。
+
+## 8. Phase 5 実装メモ（`dashboard` パッケージ）
+
+- SQL 列名は Phase 4（[db/01-schema](../../db/01-schema.md)）で確定済み。`count(*)` は `as count`、
+  タグ名は `t.name as tag_name`、直近メンテのホスト名は `s.hostname as server_hostname` で射影名に合わせる。
+- enum 列（`environment` / `status` / `type`）の DB 文字列往復は既存の `DomainConverter`
+  （`EnvironmentConverter` / `StatusConverter` / `MaintenanceTypeConverter`）をそのまま再利用（新規追加なし）。
+- タグ別集計は `selectServerCountByTag` を **1 回だけ** 呼び、`limit(10)` と `skip(10).sum()` で
+  `topTags` / `otherTagsCount` に分割する（§2、同じクエリを 2 回投げない）。
+- 集計はグローバルなため、結合テスト（`DashboardApiIntegrationTest`）は `@Transactional` で
+  テストごとにロールバックし、各テストがデータセット全体を支配する。

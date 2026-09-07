@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 8（Docker）完了。Phase 9（AWS）着手。各フェーズの決定に伴い随時更新する。
+> Phase 9（AWS / FR-CLOUD-01）完了。Phase 10（レビュー・改善）へ。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -199,15 +199,15 @@ utils/ constants/ app/（合成ルート）
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 8（Docker）完了 → Phase 9（AWS）進行中。**
-Phase 6 は Stitch の UI 方針で FE を実装（PR #36〜#42）。Phase 7 は品質確認・不具合修正（#43〜#44）。
-Phase 8 はコンテナ化: nginx が SPA 配信 + `/api` を Backend へリバースプロキシ（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、
-`backend/Dockerfile`・`frontend/Dockerfile`+nginx.conf・`infra/docker/docker-compose.app.yml`・`make app-*`、#46）。
-**Phase 9 の最重要要件は「AWS EC2 の実行状態を ServerHub 上で参照できること」**（FR-CLOUD-01、
-設計 [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)、レビュー中）。
-不変条件（オーナー指示）: `servers.status`（管理ライフサイクル）を AWS 実行状態で上書きしない・
-別モデル別カラム・画面で分離表示・AWS 障害時はキャッシュ + 取得失敗を明示・EC2 の操作機能は作らない・
-既存 MVP と既存テスト（BE 89 / FE 123）を壊さない。**設計レビュー確定まで実装 PR を作らない。**
+**現在: Phase 9（AWS）完了 → Phase 10（レビュー・改善）へ。**
+Phase 8 はコンテナ化（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、#46）。
+**Phase 9 = FR-CLOUD-01「AWS EC2 の実行状態を ServerHub 上で参照」**（設計
+[07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)、PR #47 で確定、実装 #48〜#53）。
+不変条件（すべて遵守）: `servers.status` / `Status` enum を AWS 実行状態で上書きしない・別モデル別カラム
+（`server_cloud_links`）・画面で分離表示（`CloudStateChip` は `StatusChip` と別デザイン）・AWS 障害時は
+キャッシュ + `lastError` を表示・EC2 の操作 API は実装しない・IAM は `ec2:DescribeInstances` のみ・
+静的キー非保存・ローカル/CI は `enabled=false`・既存 MVP と既存テストを壊さない。
+BE 89→134 / FE 123→148、いずれも既存不変。
 
 ---
 
@@ -309,11 +309,13 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
     AWS 失敗 200 でキャッシュ表示 + lastError・503 のみエラートースト・未連携は「AWS 未連携」。
     FE テスト 123 → 147。既存不変（cloudLink/cloudState はすべて optional）
   - **9-5 完了**: サーバー一覧に「AWS 実行状態」列（`CloudStateChip`、管理「ステータス」列とは別）。
-    未連携・未取得は「-」。MSW fixture に `cloudState`。FE テスト 147 → 148。既存不変
-  - 9-6: AWS IAM ポリシー文書 + デプロイ手順
-  不変条件: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は `ec2:DescribeInstances` のみ・
-  静的キー非保存・ローカル/CI は `enabled=false`・AWS 障害時も台帳画面は動く・FE から AWS を直接呼ばない・
-  既存 BE 89 / FE 123 を壊さない
+    未連携・未取得は「-」。FE テスト 147 → 148。既存不変
+  - **9-6 完了**: `infra/aws/iam-policy-serverhub-ec2-readonly.json`（`ec2:DescribeInstances` + region 条件のみ）+
+    `infra/aws/README.md`（IAM ロール作成・アタッチ・有効化手順・障害時挙動）。`application.yml` の
+    `poll-interval` / `staleness-threshold` も環境変数化。README / .env.example / 07 §8 を同期。コード動作は不変（既定 OFF）
+  不変条件（全 PR で遵守）: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は
+  `ec2:DescribeInstances` のみ・静的キー非保存・ローカル/CI は `enabled=false`・AWS 障害時も台帳画面は動く・
+  FE から AWS を直接呼ばない・既存テスト（BE / FE）を壊さない
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

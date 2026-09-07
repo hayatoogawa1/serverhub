@@ -60,7 +60,8 @@ serverhub/
 │   └── src/main/resources/db/migration/   Flyway マイグレーション SQL
 ├── frontend/     React + Vite アプリケーション
 ├── infra/
-│   └── docker/   開発用 docker-compose（PostgreSQL 等）
+│   ├── docker/   開発用 docker-compose（PostgreSQL 等）+ フルスタック compose
+│   └── aws/      AWS 連携（EC2 実行状態参照）の IAM ポリシー + デプロイ手順
 ├── docs/
 │   ├── requirements/  要件定義（Phase 1）
 │   ├── design/basic/  基本設計（Phase 2）
@@ -197,6 +198,15 @@ make app-down         # 停止（DB データは残る。破棄は down -v を�
 - 入口は frontend（nginx）だけ。`/api` は nginx が backend へリバースプロキシする（同一オリジン）。
 - `dev` の Vite proxy と同じ構成を nginx で再現したもの。開発時は引き続き `make be-run` + `make fe-dev`。
 - ホストの 8080 が使用中なら `.env` の `APP_PORT` を変更する。
+
+### AWS 連携（EC2 実行状態の参照、Phase 9・任意）
+
+サーバーに EC2 インスタンスを紐付け、実行状態（`running` / `stopped` 等）を参照できる（FR-CLOUD-01）。
+**既定は無効**。ローカル開発・CI では AWS に一切アクセスしない。有効化しなくても全機能が動く。
+
+- 管理ステータス（`servers.status`）とは別概念。AWS 状態で上書きしない。
+- 使う AWS API は `ec2:DescribeInstances`（参照）のみ。起動・停止などの操作機能は無い。
+- 有効化手順・IAM ポリシー（最小権限）・環境変数は [infra/aws/README.md](infra/aws/README.md)。
 
 ---
 

@@ -1,0 +1,16 @@
+# 改行コードの正規化。
+# 既定はそのまま（core.autocrlf 依存）。ただし CRLF だと壊れるファイルは LF に固定する。
+
+# シェルスクリプト / Gradle Wrapper
+*.sh            text eol=lf
+gradlew         text eol=lf
+
+# コンテナ関連（CRLF だと docker build / compose / nginx が失敗しうる）
+Dockerfile      text eol=lf
+*.dockerfile    text eol=lf
+.dockerignore   text eol=lf
+*.conf          text eol=lf
+
+# 環境変数ファイル（docker compose が値に \r を含めてしまう）
+.env            text eol=lf
+.env.*          text eol=lf

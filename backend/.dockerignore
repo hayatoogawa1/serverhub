@@ -1,0 +1,16 @@
+# ビルド成果物・ローカル状態（イメージに含めない / ビルドキャッシュを無効化しない）
+build/
+.gradle/
+bin/
+out/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# テストレポート
+**/build/reports/
+**/build/test-results/

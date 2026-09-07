@@ -125,6 +125,35 @@ fe-check: ## Frontend の型 + lint + フォーマット + テスト
 	cd frontend && $(NPM) run typecheck && $(NPM) run lint && $(NPM) run format:check && $(NPM) run test
 
 # ---------------------------------------------------------------------------
+# コンテナ（フルスタック: db + backend + frontend）
+# ---------------------------------------------------------------------------
+
+DC_APP := docker compose --env-file .env -f infra/docker/docker-compose.app.yml
+
+.PHONY: app-build
+app-build: ## フルスタックのイメージをビルド
+	$(DC_APP) build
+
+.PHONY: app-up
+app-up: ## フルスタックをビルドして起動（http://localhost:$${APP_PORT:-8080}）
+	$(DC_APP) up -d --build
+	@echo ""
+	@echo "  http://localhost:$${APP_PORT:-8080}  （ログイン: admin@serverhub.local / password）"
+	@echo "  初回はスキーマ/管理ユーザーを Flyway が自動適用。デモデータは: make app-seed"
+
+.PHONY: app-seed
+app-seed: ## 起動中のコンテナ DB にオフラインデモ用シードを投入
+	@$(DOTENV) docker exec -i serverhub-app-db psql -v ON_ERROR_STOP=1 -U "$${POSTGRES_USER:-serverhub}" -d "$${POSTGRES_DB:-serverhub}" < $(SEED_SQL)
+
+.PHONY: app-down
+app-down: ## フルスタックを停止（DB データは残す。破棄は down -v を手動で）
+	$(DC_APP) down
+
+.PHONY: app-logs
+app-logs: ## フルスタックのログを追う
+	$(DC_APP) logs -f
+
+# ---------------------------------------------------------------------------
 # 横断
 # ---------------------------------------------------------------------------
 

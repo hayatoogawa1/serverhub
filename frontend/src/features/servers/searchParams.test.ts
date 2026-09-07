@@ -14,18 +14,18 @@ describe('parseServerListParams', () => {
   })
 
   it('有効な値をそのまま読む', () => {
-    expect(parse('q=web&env=production&status=active&tags=a,b&sort=hostname&order=asc&page=3&size=50')).toEqual(
-      {
-        q: 'web',
-        env: 'production',
-        status: 'active',
-        tags: ['a', 'b'],
-        sort: 'hostname',
-        order: 'asc',
-        page: 3,
-        size: 50,
-      },
-    )
+    expect(
+      parse('q=web&env=production&status=active&tags=a,b&sort=hostname&order=asc&page=3&size=50'),
+    ).toEqual({
+      q: 'web',
+      env: 'production',
+      status: 'active',
+      tags: ['a', 'b'],
+      sort: 'hostname',
+      order: 'asc',
+      page: 3,
+      size: 50,
+    })
   })
 
   it('不正な enum / sort / size / page は既定へ丸める', () => {

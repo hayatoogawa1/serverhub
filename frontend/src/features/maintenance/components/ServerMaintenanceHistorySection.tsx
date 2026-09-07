@@ -23,12 +23,19 @@ export function ServerMaintenanceHistorySection({ serverId }: { serverId: number
   const query = useServerMaintenanceHistoriesQuery(serverId, page, SIZE)
 
   const columns: Column<MaintenanceHistoryDetail>[] = [
-    { key: 'performedDate', header: '実施日', width: 120, render: (h) => formatDate(h.performedDate) },
+    {
+      key: 'performedDate',
+      header: '実施日',
+      width: 120,
+      render: (h) => formatDate(h.performedDate),
+    },
     {
       key: 'type',
       header: '種別',
       width: 120,
-      render: (h) => <Chip size="small" variant="outlined" label={MAINTENANCE_TYPE_LABELS[h.type]} />,
+      render: (h) => (
+        <Chip size="small" variant="outlined" label={MAINTENANCE_TYPE_LABELS[h.type]} />
+      ),
     },
     { key: 'worker', header: '作業者', width: 140, render: (h) => h.worker },
     {
@@ -53,11 +60,7 @@ export function ServerMaintenanceHistorySection({ serverId }: { serverId: number
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ alignItems: 'center', mb: 1.5 }}
-      >
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
         <Typography variant="h6" component="h2">
           メンテナンス履歴
         </Typography>
@@ -84,10 +87,7 @@ export function ServerMaintenanceHistorySection({ serverId }: { serverId: number
             loading={query.isPending}
             skeletonRows={3}
             emptyState={
-              <StatePlaceholder
-                type="empty"
-                title="登録されたメンテナンス履歴はありません"
-              />
+              <StatePlaceholder type="empty" title="登録されたメンテナンス履歴はありません" />
             }
           />
           {total > SIZE && query.data && (

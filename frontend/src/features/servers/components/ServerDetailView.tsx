@@ -67,9 +67,7 @@ export function ServerDetailView({ server }: { server: ServerDetail }) {
           <StatusChip status={server.status} />
         </Field>
         <Field label="物理 / 仮想">
-          {server.virtualizationType
-            ? VIRTUALIZATION_TYPE_LABELS[server.virtualizationType]
-            : '-'}
+          {server.virtualizationType ? VIRTUALIZATION_TYPE_LABELS[server.virtualizationType] : '-'}
         </Field>
         <Field label="OS">{orDash(server.os)}</Field>
         <Field label="OS バージョン">{orDash(server.osVersion)}</Field>

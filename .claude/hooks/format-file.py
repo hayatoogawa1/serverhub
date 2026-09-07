@@ -41,11 +41,13 @@ def main() -> int:
         return 0
     if not path.exists():
         return 0
-    if not (FRONTEND / "node_modules" / ".bin" / "prettier").exists():
+    prettier_cjs = FRONTEND / "node_modules" / "prettier" / "bin" / "prettier.cjs"
+    if not prettier_cjs.exists():
         return 0
 
+    # `node` + prettier.cjs で呼ぶ（`.bin/prettier` は Windows で直接実行できないため）。
     subprocess.run(
-        ["node_modules/.bin/prettier", "--write", "--log-level", "warn", str(rel)],
+        ["node", str(prettier_cjs), "--write", "--log-level", "warn", str(rel)],
         cwd=FRONTEND,
         check=False,
     )

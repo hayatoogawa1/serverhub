@@ -1,7 +1,7 @@
 # 01. システム構成・アーキテクチャ
 
-- バージョン: 1.0（確定）
-- 最終更新: 2026-09-04
+- バージョン: 1.1（Phase 8 でコンテナ実行構成 §1.4 を追加）
+- 最終更新: 2026-09-08
 
 ## 1. システム構成
 
@@ -35,19 +35,39 @@ flowchart LR
 - Backend は `make be-run`（`.env` を読み込んで `./gradlew bootRun`）。
 - スキーマは Flyway が起動時に適用（Neon / ローカル共通）。オフラインデモのシードは `make db-seed`。
 
-### 1.3 本番想定（詳細は Phase 9）
+### 1.3 コンテナ実行（Phase 8、[ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)）
+
+```mermaid
+flowchart LR
+  U[利用者 / API クライアント] -->|"http://host:APP_PORT"| NG[frontend コンテナ<br/>nginx: SPA 静的配信 + リバースプロキシ]
+  NG -->|"/ (静的)"| NG
+  NG -->|"/api/*, /actuator/health"| BE[backend コンテナ<br/>Spring Boot :8080]
+  BE -->|JDBC| DB[(db コンテナ<br/>postgres:16-alpine)]
+```
+
+- **nginx が唯一のエントリポイント**。`/api/v1/*` を Backend へ中継するので同一オリジンが成立（CORS 不要）。
+  §1.2 の Vite proxy と同じ役割を本番相当で nginx が担う。
+- `backend` / `db` はコンテナネットワーク内のみ（ホストにポート公開しない）。
+- 各コンテナはマルチステージビルド・非 root 実行・ヘルスチェック付き。起動順は
+  `db →(healthy)→ backend →(healthy)→ frontend`。
+- 定義: `infra/docker/docker-compose.app.yml`、`backend/Dockerfile`、`frontend/Dockerfile` + `nginx.conf`。
+  操作: `make app-up` / `app-seed` / `app-down` / `app-logs`。
+- スキーマ・管理ユーザーは Backend 起動時に Flyway（V1/V2）。デモデータは `make app-seed`。
+
+### 1.4 本番想定（詳細は Phase 9）
 
 ```mermaid
 flowchart LR
   U[利用者] -->|HTTPS| ALB[ALB<br/>TLS 終端 / HTTP→HTTPS]
-  ALB -->|"/ (静的)"| S[SPA 配信<br/>（S3+CloudFront or Backend 同梱）]
-  ALB -->|"/api/v1/*"| APP[Backend<br/>ECS Fargate 等]
+  ALB -->|"すべて"| NG[frontend コンテナ<br/>nginx: SPA + /api リバースプロキシ]
+  NG -->|"/api/v1/*"| APP[backend コンテナ<br/>Spring Boot]
   APP -->|"JDBC / sslmode=require"| PDB[(本番 DB<br/>Neon or RDS ※N2)]
 ```
 
 - TLS 終端は ALB、証明書は ACM。HTTP は HTTPS へリダイレクト。HSTS を付与（requirements §10.1.13/14）。
 - Backend は `X-Forwarded-*` を尊重（`server.forward-headers-strategy`）。
-- SPA の配信方法（Backend 同梱 or 別配信）、本番 DB（N2）、コンテナ基盤は **Phase 9 で確定**。
+- Phase 8 で作った frontend / backend イメージ（§1.3 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)）をそのまま載せる。
+  コンテナ基盤（ECS / EC2 等）・本番 DB（N2）・AWS EC2 連携（[E2](../../requirements/open-issues.md)）は **Phase 9 で確定**。
 - MVP は単一インスタンス前提（requirements §10.3 / S6）。冗長化・オートスケールは将来。
 
 ## 2. アプリケーションアーキテクチャ
@@ -190,7 +210,9 @@ utils/  constants/  app/（合成ルート）
 ### 4.4 デプロイ / CI・CD（概要）
 
 - CI: GitHub Actions（`./gradlew check` + FE 全チェック）。既存。
-- CD・インフラ構築（コンテナ化、AWS）: **Phase 8（Docker）/ Phase 9（AWS）** で設計。
+- **コンテナ化: Phase 8 完了**（[ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)、§1.3）。
+  `backend/Dockerfile`・`frontend/Dockerfile`（+ nginx）・`infra/docker/docker-compose.app.yml`。
+- CD・インフラ構築（AWS）: **Phase 9** で設計。Phase 8 のイメージを ALB → nginx / Backend の構成で載せる。
 - Neon ブランチを PR ごとに CI で使う構成は将来（open-issues N1）。
 
 ## 5. この文書で追加した設計判断

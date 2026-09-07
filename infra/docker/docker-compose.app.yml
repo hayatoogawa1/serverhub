@@ -1,0 +1,80 @@
+# ServerHub フルスタック（db + backend + frontend）をコンテナで起動する。
+#
+# 使い方（リポジトリルートから）:
+#   ビルド + 起動:  make app-up          （= docker compose ... up -d --build）
+#   停止:           make app-down
+#   ログ:           make app-logs
+#   破棄（DB ごと）: docker compose --env-file .env -f infra/docker/docker-compose.app.yml down -v
+#
+# 単一エントリポイントは frontend（nginx）。ブラウザ / curl は http://localhost:${APP_PORT:-8080} へ。
+#   - 静的 SPA は nginx が配信
+#   - /api・/actuator/health は nginx が backend:8080 へリバースプロキシ（SPA と同一オリジン）
+# backend / db はコンテナネットワーク内のみ（ホストにポートを公開しない）。
+#
+# 開発 DB だけ欲しいときは従来どおり docker-compose.yml（db 単体）を使う。
+
+name: serverhub-app
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: serverhub-app-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required (see .env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required (see .env.example)}
+      TZ: Asia/Tokyo
+      LANG: C.UTF-8
+    volumes:
+      - app_pgdata:/var/lib/postgresql/data
+      # オフラインデモ用シード（スキーマ未適用時は \if ガードで何もしない）
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: serverhub-backend:local
+    container_name: serverhub-app-backend
+    environment:
+      # 接続先はコンテナネットワーク上の db サービス。認証情報は .env と共有
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # 本番寄りにログを抑える場合の例（既定は application.yml の DEBUG）
+      LOGGING_LEVEL_COM_SERVERHUB: ${LOGGING_LEVEL_COM_SERVERHUB:-INFO}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    image: serverhub-frontend:local
+    container_name: serverhub-app-frontend
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  app_pgdata:
+    name: serverhub-app-pgdata

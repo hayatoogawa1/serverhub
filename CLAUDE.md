@@ -308,7 +308,8 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
     `ServerDetailView` は無変更 = `StatusChip` そのまま）/ `CloudLinkFormModal`。refresh の二重送信防止・
     AWS 失敗 200 でキャッシュ表示 + lastError・503 のみエラートースト・未連携は「AWS 未連携」。
     FE テスト 123 → 147。既存不変（cloudLink/cloudState はすべて optional）
-  - 9-5: FE 一覧 AWS 列 + MSW + 仕上げ
+  - **9-5 完了**: サーバー一覧に「AWS 実行状態」列（`CloudStateChip`、管理「ステータス」列とは別）。
+    未連携・未取得は「-」。MSW fixture に `cloudState`。FE テスト 147 → 148。既存不変
   - 9-6: AWS IAM ポリシー文書 + デプロイ手順
   不変条件: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は `ec2:DescribeInstances` のみ・
   静的キー非保存・ローカル/CI は `enabled=false`・AWS 障害時も台帳画面は動く・FE から AWS を直接呼ばない・

@@ -266,8 +266,10 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   Backend の Service を `interface`+`Impl` に分離（ServerService/TagService/MaintenanceHistoryService/
   DashboardService + ServerHubUserDetailsServiceImpl、#41）。Controller はインターフェースを DI（変更なし）
 - Phase 6 Frontend: FE-1 基盤（#36）・FE-2 サーバー参照（#37）・FE-3 登録/編集/論理削除（#38）・
-  FE-4 メンテナンス履歴（#39）・FE-4.5 横スライス化（#40）マージ済み。次は FE-5 ダッシュボード（新構成で）。
-  FE のディレクトリ構造は [frontend/README.md](frontend/README.md)、Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
+  FE-4 メンテナンス履歴（#39）・FE-4.5 横スライス化（#40）マージ済み。
+  FE-5 ダッシュボード（SC-02、`recharts` 追加、集計 → 絞り込み一覧へドリルダウン）実装中 →
+  **これで Phase 6 の全画面が揃う**。FE のディレクトリ構造は [frontend/README.md](frontend/README.md)、
+  Stitch 差分は [06-ui §10](docs/design/basic/06-ui.md)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

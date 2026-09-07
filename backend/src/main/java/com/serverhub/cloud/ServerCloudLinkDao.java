@@ -30,6 +30,11 @@ public interface ServerCloudLinkDao {
   @Select
   List<ServerCloudLink> selectByServerIds(List<Long> serverIds);
 
+  /** 紐付けの重複チェック用（別サーバーが同じインスタンスを使っていないか）。 */
+  @Select
+  Optional<ServerCloudLink> selectByProviderAndExternalId(
+      CloudProvider provider, String externalId);
+
   /** 紐付けの新規作成。日時は {@link ServerCloudLinkEntityListener}、{@code id} は IDENTITY 採番。 */
   @Insert
   Result<ServerCloudLink> insert(ServerCloudLink link);

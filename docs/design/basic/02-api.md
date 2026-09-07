@@ -194,11 +194,15 @@ requirements §10.1.12 の統一形式。
 | `PUT` | `/servers/{id}` | 編集（全項目 + タグ）。`version` による楽観ロック | FR-SRV-05 / FR-TAG-01 | `200` + サーバー | `400`、`409`（ホスト名重複 / `version` 不一致）、`404`（削除済み）、`401` |
 | `DELETE` | `/servers/{id}` | 論理削除（`deleted_at` 設定）。`server_tags` は物理削除 | FR-SRV-06 | `204` | `404`（不存在・既削除）、`401` |
 | `GET` | `/servers/{id}/maintenance-histories` | 当該サーバーの履歴（実施日降順、ページング可） | FR-MNT-03 | `200` + `{ content, page }` | `404`（サーバー不存在・削除済み、詳細設計 [04-maintenance](../detail/04-maintenance.md) D-MNT-02）、`401` |
+| `PUT` | `/servers/{id}/cloud-link` | AWS EC2 等との紐付けの作成 / 置換（`{ provider, externalId, region? }`）。**`servers.version` はバンプしない**（P7） | FR-CLOUD-01 | `200` + `CloudLink` | `400`（インスタンス ID 形式・provider）、`404`（サーバー不存在・削除済み）、`409`（`CLOUD_LINK_CONFLICT`：別サーバーが同じインスタンスを使用中）、`401` |
+| `DELETE` | `/servers/{id}/cloud-link` | 紐付けの解除（冪等） | FR-CLOUD-01 | `204` | `404`（サーバー不存在・削除済み）、`401` |
+| `POST` | `/servers/{id}/cloud-link/refresh` | その 1 台だけ即時取得。**AWS 取得失敗時もキャッシュ値 + `lastError` を `200` で返す**（P8） | FR-CLOUD-01 | `200` + `CloudLink` | `404`（サーバー / 紐付けが無い）、`503`（`CLOUD_PROVIDER_UNAVAILABLE`：provider 未設定・全断）、`401` |
 
 **検索クエリ（`GET /servers`、FR-SRV-02）**：`§2.5` の共通パラメータ + `keyword`（ホスト名 / IP / 用途に部分一致、`LIKE` ワイルドカードはエスケープ）、`environment`（enum・完全一致）、`status`（enum・完全一致）、`tags`（配列・指定した全タグを持つ = AND、B5）。各条件 AND、未指定は無視。
 
 - 楽観ロック競合（`version` 不一致）は `409`。Frontend は最新の再取得を促す（BR-08 / requirements §8.3）。
 - `retired`（廃止）のサーバーは論理削除とは別概念で、一覧・検索・集計に含まれる（BR-05）。
+- **クラウド連携（`cloud-link`、FR-CLOUD-01）**：`GET /servers/{id}` レスポンスに `cloudLink`（nullable）、`GET /servers` の各行に `cloudState` / `cloudStateFetchedAt`（nullable）を**加算**。`cloudLink` の `state`（`running`/`stopped` 等の正規化値）は **`servers.status`（管理ライフサイクル）とは別概念**で、AWS からの取得でのみ設定される（上書きしない）。設計は [07-aws-ec2-integration](07-aws-ec2-integration.md)。
 
 ### 3.3 タグ（`/api/v1/tags`）
 

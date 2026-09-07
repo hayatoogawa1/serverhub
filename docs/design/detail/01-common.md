@@ -169,12 +169,17 @@ requirements §10.1.6 のとおり Controller の Bean Validation（`@Valid`）�
 | `AUTH_REQUIRED` | 401 | 未認証（`AuthenticationEntryPoint`） | auth |
 | `AUTH_BAD_CREDENTIALS` | 401 | ログイン失敗 | auth |
 | `INTERNAL_ERROR` | 500 | 想定外エラー全般 | 全機能共通 |
+| `CLOUD_LINK_CONFLICT` | 409 | 別サーバーが同じインスタンス ID を使用中（事前チェック・DB 一意制約とも同一コード） | cloud（Phase 9 追加、FR-CLOUD-01） |
+| `CLOUD_PROVIDER_UNAVAILABLE` | 503 | クラウド provider 全体に問い合わせできない（未設定・全断）。個別インスタンスの取得失敗は含まない（`cloudLink.lastError` で表現し 200） | cloud（Phase 9 追加、FR-CLOUD-01） |
 
 - **02〜05 の各文書を設計した時点でこの表に新規コードが必要か確認**したところ、
   MVP の機能範囲（requirements §5.1、CRUD + 検索 + 履歴 + ダッシュボード）では
   上記 7 件で全ケースを表現できる見込み（例: メンテナンス登録時の対象サーバー不存在・削除済みは
   いずれも `RESOURCE_NOT_FOUND` を再利用）。**02〜05 で新規コードが必要になった場合のみ、
   この表に追記する**（§3.2 の手順）。
+- **Phase 9（FR-CLOUD-01）で `CLOUD_LINK_CONFLICT` / `CLOUD_PROVIDER_UNAVAILABLE` を追加**。
+  §3.2 の手順どおり既存コードで表現できないか確認した結果（重複は `DUPLICATE_HOSTNAME` と
+  意味が違う／503 は既存になし）新設。設計は [07-aws-ec2-integration](../basic/07-aws-ec2-integration.md) §6.6。
 
 ---
 

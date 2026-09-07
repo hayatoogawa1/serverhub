@@ -1,5 +1,7 @@
 package com.serverhub.server;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.serverhub.cloud.CloudLinkResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -7,7 +9,11 @@ import java.util.List;
  * サーバー詳細（詳細設計 03-server §4.2、D-SRV-04）。
  *
  * <p>メンテナンス履歴は埋め込まない（D-SRV-04）。Frontend は履歴一覧 API を小さい {@code size} で別途呼ぶ。
+ *
+ * <p>{@code cloudLink} は AWS EC2 等との紐付けと観測実行状態（FR-CLOUD-01）。<b>管理ステータス（{@code status}）
+ * とは別物。</b>紐付けが無ければ {@code null}（JSON に出さない）。
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ServerDetailResponse(
     Long id,
     String hostname,
@@ -23,4 +29,5 @@ public record ServerDetailResponse(
     List<String> tags,
     Long version,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt) {}
+    LocalDateTime updatedAt,
+    CloudLinkResponse cloudLink) {}

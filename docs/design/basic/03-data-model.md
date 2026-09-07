@@ -263,7 +263,7 @@ requirements §5.3 / §10.1 の拡張ポイントを、スキーマ変更が最�
 | SSL 期限 / 障害履歴 / 定期メンテナンス | `servers` に 1:N でぶら下がる履歴系テーブル | `servers.id` 代理キーに FK を張るだけで追加可能 |
 | 複数 IP | `server_ip_addresses`（`servers` 1:N） | 現状 `ip_address` 単一（B3）。分離時もサーバー本体の変更は不要 |
 | 認証情報の参照管理 | Secret Manager の識別子（ARN/パス）のみを持つ列 or テーブル | 秘密情報の値は保存しない方針を維持（BR-11 / §10.1.9） |
-| クラウド連携（AWS EC2 等の実行状態参照） | `server_cloud_links`（`servers` 1:0..1、`(provider, external_id)` UNIQUE、`state` / `state_at` を保持） | `servers.id` 代理キーに FK を張るだけで追加可能。**ポーラーは新テーブルのみ更新し `servers.version` / `updated_at` に触れない**。管理 `status` とは別概念で自動整合しない（Phase 9、[E2](../../requirements/open-issues.md) / [探索ドキュメント](../exploration/01-aws-ec2-integration-impact.md)） |
+| クラウド連携（AWS EC2 等の実行状態参照） | `server_cloud_links`（`servers` 1:0..1、`(provider, external_id)` UNIQUE、`state` / `state_raw` / `state_fetched_at` / `last_error` を保持） | `servers.id` 代理キーに FK を張るだけで追加可能。**ポーラーは新テーブルのみ更新し `servers.version` / `updated_at` に触れない**。管理 `status` とは別概念で自動整合しない。Phase 9 で `V3` 追加 → 設計 [07-aws-ec2-integration](07-aws-ec2-integration.md)（FR-CLOUD-01、[E2](../../requirements/open-issues.md)） |
 
 ---
 

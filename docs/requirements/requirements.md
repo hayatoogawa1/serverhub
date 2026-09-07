@@ -548,6 +548,7 @@ flowchart TD
 | FR-MNT-02 | メンテナンス履歴登録 | UC-11 | メンテナンス履歴 | G3 |
 | FR-MNT-03 | サーバー詳細からの履歴参照 | UC-12 | メンテナンス履歴 | G3 |
 | FR-DASH-01 | ダッシュボード集計・表示 | UC-13 | ダッシュボード | G4 |
+| FR-CLOUD-01 | AWS EC2 実行状態の参照（Phase 9 追加、設計 [07-aws-ec2-integration](../design/basic/07-aws-ec2-integration.md)） | — | サーバー | G1 |
 | FR-COM-01 | 統一エラー表示 | 横断 | 共通 UI | G5 |
 | FR-COM-02 | ローディング表示 | 横断 | 共通 UI | — |
 | FR-COM-03 | 通知（トースト） | 横断 | 共通 UI | — |
@@ -746,6 +747,25 @@ flowchart TD
   - 集計は**集計クエリ**で取得し N+1 を避ける（§10.2）。
 - **出力**: 上記の集計結果（数値 + グラフ用データ）。各集計から対応する絞り込み一覧（FR-SRV-02）へ遷移可能。
 - **エラー**: `401`。データ 0 件でも画面は成立（0 表示）。
+
+#### FR-CLOUD-01 AWS EC2 実行状態の参照（Phase 9 追加）
+
+- **概要**: サーバーに AWS EC2 インスタンスを紐付け、その**実行状態**（`running` / `stopped` 等）を
+  ServerHub 上で参照する。AWS コンソール/API で停止すれば ServerHub にも「AWS 実行状態: stopped」と表示される。
+- **入力**: 紐付け = EC2 インスタンス ID（手入力）+ リージョン。実行状態の取得は不要（システムが定期取得）。
+- **処理・業務ルール**:
+  - **`servers.status`（管理ステータス、B2）は人が管理するライフサイクル状態として維持し、AWS 実行状態で
+    上書きしない。** AWS 実行状態は別モデル（`server_cloud_links`）・別カラムで扱う。
+  - 実行状態は定期ポーリングで取得しキャッシュする。明細画面から「今すぐ更新」も可能。
+  - **AWS API 障害時はキャッシュ（最後に成功した値）を「最終取得 HH:MM」付きで表示し、取得失敗を明示する。**
+    取得できないことを理由に `servers.status` を変更しない。
+  - **EC2 の起動・停止などの操作は行わない**（参照のみ）。IAM 権限も `ec2:DescribeInstances` に限定。
+  - 画面では「管理ステータス」と「AWS 実行状態」を**明確に分離**して表示する。
+- **出力**: サーバー詳細に `cloudLink`（provider / インスタンス ID / 正規化状態 / 取得時刻 / stale / 取得失敗理由）。
+  一覧に `cloudState` の軽量表示。
+- **エラー**: サーバー不存在 → `404`。`401`。別サーバーが同じインスタンス ID を使用中 → `409`。
+- **スコープ外**: EC2 一覧からの一括取り込み、メトリクス、複数リージョン UI、ダッシュボード集計、
+  管理ステータスとの自動整合。詳細は [07-aws-ec2-integration](../design/basic/07-aws-ec2-integration.md) §1.3。
 
 #### FR-COM-01〜06 共通 UI
 
@@ -1422,8 +1442,8 @@ flowchart TD
   API を再利用可能な形にしておく（§5.3）。認証方式（セッション）は外部連携時に見直しが必要。
   - 実サーバーとの連携（死活監視・構成情報の自動取得・ステータス自動更新等）は
     **MVP 完了後の独立フェーズ**で扱う（[open-issues.md](open-issues.md) E1）。MVP では拡張シームの確保に留める。
-  - AWS EC2 の実行状態参照は **Phase 9** で正式設計する。既存設計への影響は調査済みで破壊的変更は不要
-    （[open-issues.md](open-issues.md) E2 / [探索ドキュメント](../design/exploration/01-aws-ec2-integration-impact.md)）。
+  - AWS EC2 の実行状態参照は **Phase 9**（FR-CLOUD-01、設計 [07-aws-ec2-integration](../design/basic/07-aws-ec2-integration.md)、
+    影響調査 [E2](open-issues.md) / [探索ドキュメント](../design/exploration/01-aws-ec2-integration-impact.md)）。破壊的変更は不要。
     **AWS の実行状態（`running`/`stopped` 等）で ServerHub の管理 `status` を上書きしない。**
 
 ## 15. 移行要件

@@ -286,3 +286,46 @@ export function maintenanceHandlers(opts: MaintenanceHandlerOptions = {}) {
     }),
   ]
 }
+
+export const dashboardSummaryFixture = {
+  totalServers: 42,
+  serversByEnvironment: [
+    { environment: 'production', count: 20 },
+    { environment: 'staging', count: 15 },
+    { environment: 'development', count: 7 },
+  ],
+  serversByStatus: [
+    { status: 'active', count: 30 },
+    { status: 'maintenance', count: 8 },
+    { status: 'retired', count: 4 },
+  ],
+  topTags: [
+    { tagName: 'web', count: 12 },
+    { tagName: 'db-postgres', count: 6 },
+  ],
+  otherTagsCount: 3,
+  recentMaintenanceHistories: [
+    {
+      id: 10,
+      serverId: 1,
+      serverHostname: 'web-prod-01',
+      performedDate: '2026-08-15',
+      type: 'patch',
+    },
+  ],
+}
+
+/** SC-02 ダッシュボードの MSW ハンドラ。 */
+export function dashboardHandlers(opts: { summary?: unknown; error?: boolean } = {}) {
+  return [
+    http.get(`${API}/dashboard/summary`, () => {
+      if (opts.error) {
+        return HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: 'システムエラーが発生しました。', traceId: 't' },
+          { status: 500 },
+        )
+      }
+      return HttpResponse.json(opts.summary ?? dashboardSummaryFixture)
+    }),
+  ]
+}

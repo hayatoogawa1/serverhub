@@ -199,13 +199,14 @@ utils/ constants/ app/（合成ルート）
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 6（Frontend 実装）完了 → Phase 7（テスト）進行中。**
+**現在: Phase 7（テスト）完了 → Phase 8（Docker）進行中。**
 Phase 5 は詳細設計 01〜05 + 横断（ログ）を実クラス化して完了（PR #29〜#33 / #35）。
 Phase 6 は Google Stitch の「MVP UI/UX 実装仕様書」を UI 方針に、**Backend/DB は変更せず既存 API のまま**
-React + TypeScript + MUI で実装（PR #36〜#42、優先順位は 確定要件 > API > DB > 既存 FE 共通設計
-（[06-ui](docs/design/basic/06-ui.md)）> Stitch、差分は [06-ui §10](docs/design/basic/06-ui.md)）。
-Phase 7 は MVP 全体の品質確認: FE/BE の自動テスト維持・不足分の追加、FE↔BE の結合確認
-（Docker Postgres + `bootRun` での API 疎通含む）、発見した不具合の修正。**MVP 外の機能は追加しない。**
+React + TypeScript + MUI で実装（PR #36〜#42）。
+Phase 7 は MVP 全体の品質確認: FE/BE の自動テスト維持・不足分の追加、FE↔BE の結合確認、不具合修正（PR #43〜#44）。
+Phase 8 はコンテナ化: nginx が SPA 配信 + `/api` を Backend へリバースプロキシ（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)）。
+`backend/Dockerfile`・`frontend/Dockerfile`（+ nginx.conf）・`infra/docker/docker-compose.app.yml`・`make app-*`。
+**AWS 連携（E2）の本番コードは Phase 8 では追加しない。**
 
 ---
 
@@ -223,6 +224,7 @@ Phase 7 は MVP 全体の品質確認: FE/BE の自動テスト維持・不足�
 | Backend 起動 / ビルド / テスト / 整形 | `make be-run` / `make be-build` / `make be-test`（Docker 必須） / `make be-format` |
 | Frontend 開発 / チェック / ビルド / 整形 | `make fe-dev` / `make fe-check` / `make fe-build` / `make fe-format` |
 | 全チェック（push 前相当） | `make check` |
+| フルスタックをコンテナ起動 / シード / 停止 / ログ | `make app-up` / `make app-seed` / `make app-down` / `make app-logs`（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)） |
 | Flyway マイグレーション配置先 | `backend/src/main/resources/db/migration/`（`V<n>__<説明>.sql`） |
 | API ドキュメント | `http://localhost:8080/swagger-ui.html` |
 
@@ -273,9 +275,14 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   FE 401 インターセプタの不具合を修正 — `/auth/me` 自身の 401 でも横断ハンドラが起動し
   `['auth','me']` invalidate → `/auth/me` 再取得の無限ループになっていた。認証エンドポイント
   （`/auth/**`）の 401 はハンドラ対象外にした（[06-ui §2.3 / D-UI-03](docs/design/basic/06-ui.md)）。
-  FE テスト +13（ServerListPage の URL クエリ同期 / 絞り込み / ページング、ルーティング統合
+  FE テスト +13（110→123。ServerListPage の URL クエリ同期 / 絞り込み / ページング、ルーティング統合
   = 戻る/進む・セッション切れ・NotFound、apiClient インターセプタ）。BE は Testcontainers
-  結合テストに加え Docker Postgres + `bootRun` で主要 API を手動疎通確認
+  結合テスト 89 + Docker Postgres + `bootRun` で主要 API を手動疎通確認。**Phase 7 完了（#43 / #44）**
+- Phase 8 Docker: 3 コンテナ（db / backend / frontend=nginx）。**nginx が唯一のエントリポイントで
+  `/api` を Backend へリバースプロキシ**（同一オリジン、CORS 不要）。Backend は SPA を配信しない。
+  マルチステージビルド・非 root・ヘルスチェック。`make app-up` でフルスタック起動 → ローカルで
+  ログイン〜CRUD〜dashboard の疎通を確認済み。`.gitattributes` で `gradlew`/`*.sh`/`Dockerfile`/`.env*` を
+  LF 固定（CRLF だと docker build / compose が壊れる）→ [ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - Phase 2 基本設計 00-overview / 01-architecture v1.0 確定 → [docs/design/basic/](docs/design/basic/)
 - Q2（API バージョニング `/api/v1` + 軽量レスポンス形式 + 統一エラーエンベロープ）確定 → [02-api](docs/design/basic/02-api.md)（D-API-01〜07）
 - Phase 2 基本設計 02-api / 03-data-model v1.0 確定 → [docs/design/basic/](docs/design/basic/)

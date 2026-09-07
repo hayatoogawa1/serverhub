@@ -177,8 +177,26 @@ docker exec -it serverhub-db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 | Frontend 開発サーバー | `make fe-dev` | `cd frontend && npm run dev` |
 | Frontend チェック / ビルド / 整形 | `make fe-check` / `make fe-build` / `make fe-format` | typecheck+lint+format+test / build / prettier |
 | 全チェック（push 前相当） | `make check` | `be-check` + `fe-check` |
+| フルスタックをコンテナ起動 / 停止 | `make app-up` / `make app-down` | `docker compose -f infra/docker/docker-compose.app.yml up -d --build` |
+| コンテナ DB にデモデータ投入 | `make app-seed` | `psql < infra/docker/initdb/01_seed.sql` |
+| コンテナのログ | `make app-logs` | `docker compose -f ...app.yml logs -f` |
 
 > `make be-test` は Testcontainers で PostgreSQL を起動するため Docker が必要。
+
+### フルスタックをコンテナで動かす（Phase 8、[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)）
+
+```bash
+make setup            # .env が無ければ作成
+make app-up           # db + backend + frontend をビルドして起動
+#   → http://localhost:8080  （.env の APP_PORT で変更可）
+#     ログイン: admin@serverhub.local / password
+make app-seed         # （任意）デモのサーバー / タグ / 履歴を投入
+make app-down         # 停止（DB データは残る。破棄は down -v を手動で）
+```
+
+- 入口は frontend（nginx）だけ。`/api` は nginx が backend へリバースプロキシする（同一オリジン）。
+- `dev` の Vite proxy と同じ構成を nginx で再現したもの。開発時は引き続き `make be-run` + `make fe-dev`。
+- ホストの 8080 が使用中なら `.env` の `APP_PORT` を変更する。
 
 ---
 

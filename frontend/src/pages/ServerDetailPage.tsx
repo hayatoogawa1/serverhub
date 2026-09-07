@@ -115,7 +115,7 @@ export function ServerDetailPage() {
       />
       <Stack spacing={4}>
         <ServerDetailView server={server} />
-        <ServerMaintenanceHistorySection serverId={server.id} />
+        <ServerMaintenanceHistorySection serverId={server.id} serverHostname={server.hostname} />
       </Stack>
 
       {editOpen && (

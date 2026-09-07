@@ -1,6 +1,9 @@
 import { http, HttpResponse } from 'msw'
 import type { ServerDetail, ServerSummary } from '@/features/servers/types'
-import type { MaintenanceHistoryDetail } from '@/features/maintenance/types'
+import type {
+  MaintenanceHistoryDetail,
+  MaintenanceHistorySummary,
+} from '@/features/maintenance/types'
 
 const API = '*/api/v1'
 
@@ -191,6 +194,98 @@ export function serverHandlers(opts: ServerHandlerOptions = {}) {
       const prefix = new URL(request.url).searchParams.get('prefix') ?? ''
       const all = ['web', 'web-edge', 'payments', 'db-postgres']
       return HttpResponse.json(all.filter((t) => t.startsWith(prefix)))
+    }),
+  ]
+}
+
+export const maintenanceSummariesFixture: MaintenanceHistorySummary[] = [
+  {
+    id: 10,
+    serverId: 1,
+    serverHostname: 'web-prod-01',
+    serverDeleted: false,
+    performedDate: '2026-08-15',
+    type: 'patch',
+    worker: 'ops-a',
+  },
+  {
+    id: 11,
+    serverId: 5,
+    serverHostname: 'legacy-db-99',
+    serverDeleted: true,
+    performedDate: '2026-07-01',
+    type: 'hardware',
+    worker: 'ops-b',
+  },
+]
+
+interface MaintenanceHandlerOptions {
+  summaries?: MaintenanceHistorySummary[]
+  createOutcome?: 'success' | 'server-not-found' | 'validation' | 'error'
+  spy?: { create?: unknown }
+}
+
+/** SC-07 一覧 / SC-08 登録の MSW ハンドラ。 */
+export function maintenanceHandlers(opts: MaintenanceHandlerOptions = {}) {
+  const summaries = opts.summaries ?? maintenanceSummariesFixture
+  return [
+    http.get(`${API}/maintenance-histories`, ({ request }) => {
+      const url = new URL(request.url)
+      const size = Number(url.searchParams.get('size') ?? '20')
+      const page = Number(url.searchParams.get('page') ?? '0')
+      const serverId = url.searchParams.get('serverId')
+      const filtered = serverId
+        ? summaries.filter((s) => s.serverId === Number(serverId))
+        : summaries
+      return HttpResponse.json({
+        content: filtered.slice(page * size, page * size + size),
+        page: {
+          number: page,
+          size,
+          totalElements: filtered.length,
+          totalPages: Math.max(1, Math.ceil(filtered.length / size)),
+        },
+      })
+    }),
+    http.post(`${API}/maintenance-histories`, async ({ request }) => {
+      const body = await request.json()
+      if (opts.spy) opts.spy.create = body
+      switch (opts.createOutcome) {
+        case 'server-not-found':
+          return HttpResponse.json(
+            { code: 'RESOURCE_NOT_FOUND', message: '対象が見つかりません。', traceId: 't' },
+            { status: 404 },
+          )
+        case 'validation':
+          return HttpResponse.json(
+            {
+              code: 'VALIDATION_ERROR',
+              message: '入力内容を確認してください。',
+              traceId: 't',
+              errors: [{ field: 'content', message: '作業内容は必須です。' }],
+            },
+            { status: 400 },
+          )
+        case 'error':
+          return HttpResponse.json(
+            { code: 'INTERNAL_ERROR', message: 'システムエラーが発生しました。', traceId: 't' },
+            { status: 500 },
+          )
+        default:
+          return HttpResponse.json(
+            {
+              id: 99,
+              performedDate: (body as { performedDate: string }).performedDate,
+              type: (body as { type: string }).type,
+              worker: (body as { worker: string }).worker,
+              content: (body as { content: string }).content,
+              impact: null,
+              result: null,
+              createdAt: '2026-09-08T10:00:00+09:00',
+            },
+            { status: 201 },
+          )
+      }
     }),
   ]
 }

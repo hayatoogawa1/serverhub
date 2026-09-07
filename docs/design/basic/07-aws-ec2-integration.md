@@ -7,8 +7,10 @@
 - 関連: [03-data-model](03-data-model.md) §5 / [02-api](02-api.md) / [04-security](04-security.md) / [01-architecture](01-architecture.md) §1.3・1.4 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)
 - 最終更新: 2026-09-08
 
-> **実装進捗**: 9-1 完了（DB `V3` + Entity/DAO + enum + Converter、#48）。
-> 9-2 実装中（`CloudStateProvider` interface + `Ec2*`/`Disabled*` impl + `CloudStatePoller` + AWS SDK v2 + `serverhub.cloud.*` 既定 OFF）。
+> **実装進捗**: 9-1（DB/Entity/DAO/enum、#48）・9-2（provider + poller + AWS SDK、#49）完了。
+> 9-3 実装中（`CloudLinkController` + `CloudLinkServiceImpl` + `PUT/DELETE /servers/{id}/cloud-link` + `refresh` +
+> `cloudLink` を detail、`cloudState`/`cloudStateFetchedAt` を一覧に追加。合成は `ServerServiceImpl` +
+> 読み取り専用 `CloudLinkReader`。`CLOUD_LINK_CONFLICT`(409) / `CLOUD_PROVIDER_UNAVAILABLE`(503)）。
 
 ---
 
@@ -182,7 +184,7 @@ CREATE INDEX ix_server_cloud_links_poll ON server_cloud_links (state_fetched_at)
 ```
 
 - 一覧はバッジ表示のみなので `state` と `fetchedAt` だけ。N+1 回避のため
-  `ServerCloudLinkDao.selectStatesByServerIds(ids)` で一括取得（`ServerTagDao.selectByServerIds` と同じ手法）。
+  `CloudLinkReader.findByServerIds(ids)（ServerCloudLinkDao.selectByServerIds）` で一括取得（`ServerTagDao.selectByServerIds` と同じ手法）。
 
 ### 5.2 新規エンドポイント（サブリソース、P7）
 
@@ -232,25 +234,33 @@ CREATE INDEX ix_server_cloud_links_poll ON server_cloud_links (state_fetched_at)
 ### 6.2 レイヤ（[CLAUDE.md §3](../../../CLAUDE.md) / Impl 命名規約 §4）
 
 ```
-CloudLinkController
-  → CloudLinkService (interface) / CloudLinkServiceImpl
+CloudLinkController  （PUT / DELETE / POST refresh）
+  → CloudLinkService (interface) / CloudLinkServiceImpl  @Transactional
       → ServerCloudLinkDao (@Dao interface + 外部 SQL)
       → ServerDao（対象サーバーの存在・非削除チェックに再利用、D-MNT-03 と同じ依存許容）
       → CloudStateProvider (interface)  ← refresh 時のみ
-          ├ Ec2CloudStateProviderImpl     （AWS SDK v2 Ec2Client、@Profile / @ConditionalOnProperty）
-          └ DisabledCloudStateProviderImpl（既定。常に "provider unavailable" を返す）
+          ├ Ec2CloudStateProviderImpl     （@ConditionalOnProperty enabled=true）
+          └ DisabledCloudStateProviderImpl（既定。常に CloudProviderUnavailableException）
 
-CloudStatePoller   @Scheduled（@ConditionalOnProperty "serverhub.cloud.enabled"）
-  → ServerCloudLinkDao（紐付け一覧の取得・state の一括更新）
-  → CloudStateProvider（バッチ describe）
+ServerServiceImpl（既存）
+  → CloudLinkReader（読み取り専用ヘルパー）  ← ここだけを追加依存
+      → ServerCloudLinkDao / CloudProperties
+
+CloudStatePoller   @Scheduled（@ConditionalOnProperty enabled=true）
+  → ServerCloudLinkDao / CloudStateProvider
+
+CloudExceptionHandler @RestControllerAdvice
+  → CloudLinkConflictException → 409、CloudProviderUnavailableException → 503
 ```
 
-- **`ServerService` / `ServerServiceImpl` は変更最小**: 詳細・一覧のレスポンス組み立てで
-  `CloudLinkService.findBy(serverId)` / `findStatesByServerIds(ids)` を呼んで `cloudLink` /
-  `cloudState` を埋めるだけ（enrichment）。ビジネスロジックは増やさない。
-  - 代替案: `ServerController` 側で合成 → Controller が薄くなくなるので不採用。
-  - 代替案: Response DTO を組み立てる薄い `ServerResponseAssembler` を新設 → **要レビュー**。
-- `@EnableScheduling` を `config` に追加（`serverhub.cloud.enabled=true` のときのみ実質稼働）。
+- **`ServerServiceImpl` は変更最小**: `get()` / `list()` の組み立てで `CloudLinkReader` を呼び
+  `cloudLink` / `cloudState` を埋めるだけ（enrichment）。ビジネスロジックは増やさない。
+  - `CloudLinkReader` は `ServerCloudLinkDao` + `CloudProperties` のみに依存する読み取り専用 Bean。
+    `server` 層が `cloud` 層の書き込み系や `ServerDao` に依存しないようにこの 1 つに集約した
+    （Assembler は新設しない — レビュー確定事項）。
+  - DB 一意制約違反（`DuplicateKeyException`）は `CloudLinkServiceImpl` で `CloudLinkConflictException`
+    に正規化してからスローする（`server` の `DUPLICATE_HOSTNAME` ハンドラと衝突させない）。
+- `@EnableScheduling` は `CloudConfig` 内の内部 `@Configuration`（`enabled=true` のみ）。
 
 ### 6.3 ポーラーの挙動（`CloudStatePoller`）
 

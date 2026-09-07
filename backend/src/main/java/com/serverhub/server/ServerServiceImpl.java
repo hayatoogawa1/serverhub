@@ -1,5 +1,7 @@
 package com.serverhub.server;
 
+import com.serverhub.cloud.CloudLinkReader;
+import com.serverhub.cloud.ServerCloudLink;
 import com.serverhub.common.error.ResourceNotFoundException;
 import com.serverhub.common.page.PageRequest;
 import com.serverhub.common.page.PageResponse;
@@ -30,11 +32,17 @@ public class ServerServiceImpl implements ServerService {
   private final ServerDao serverDao;
   private final TagDao tagDao;
   private final ServerTagDao serverTagDao;
+  private final CloudLinkReader cloudLinkReader;
 
-  public ServerServiceImpl(ServerDao serverDao, TagDao tagDao, ServerTagDao serverTagDao) {
+  public ServerServiceImpl(
+      ServerDao serverDao,
+      TagDao tagDao,
+      ServerTagDao serverTagDao,
+      CloudLinkReader cloudLinkReader) {
     this.serverDao = serverDao;
     this.tagDao = tagDao;
     this.serverTagDao = serverTagDao;
+    this.cloudLinkReader = cloudLinkReader;
   }
 
   @Override
@@ -64,20 +72,25 @@ public class ServerServiceImpl implements ServerService {
     List<Server> servers = serverDao.selectList(criteria, page, sort, order);
     long total = serverDao.selectCount(criteria);
 
-    Map<Long, List<String>> tagsByServer =
-        tagNamesByServerId(servers.stream().map(Server::id).toList());
+    List<Long> serverIds = servers.stream().map(Server::id).toList();
+    Map<Long, List<String>> tagsByServer = tagNamesByServerId(serverIds);
+    Map<Long, ServerCloudLink> cloudByServer = cloudLinkReader.findByServerIds(serverIds);
 
     List<ServerSummaryResponse> content =
         servers.stream()
             .map(
-                s ->
-                    new ServerSummaryResponse(
-                        s.id(),
-                        s.hostname(),
-                        s.environment(),
-                        s.status(),
-                        tagsByServer.getOrDefault(s.id(), List.of()),
-                        s.updatedAt()))
+                s -> {
+                  ServerCloudLink link = cloudByServer.get(s.id());
+                  return new ServerSummaryResponse(
+                      s.id(),
+                      s.hostname(),
+                      s.environment(),
+                      s.status(),
+                      tagsByServer.getOrDefault(s.id(), List.of()),
+                      s.updatedAt(),
+                      (link == null || link.state() == null) ? null : link.state().value(),
+                      link == null ? null : link.stateFetchedAt());
+                })
             .toList();
 
     return PageResponse.of(content, page, total);
@@ -86,7 +99,10 @@ public class ServerServiceImpl implements ServerService {
   @Override
   public ServerDetailResponse get(Long id) {
     Server server = requireActive(id);
-    return toDetail(server, serverTagDao.selectTagNamesByServerId(id));
+    return toDetail(
+        server,
+        serverTagDao.selectTagNamesByServerId(id),
+        cloudLinkReader.findForDetail(id).orElse(null));
   }
 
   @Override
@@ -225,7 +241,8 @@ public class ServerServiceImpl implements ServerService {
     return (value == null || value.isBlank()) ? null : value;
   }
 
-  private static ServerDetailResponse toDetail(Server s, List<String> tags) {
+  private static ServerDetailResponse toDetail(
+      Server s, List<String> tags, com.serverhub.cloud.CloudLinkResponse cloudLink) {
     return new ServerDetailResponse(
         s.id(),
         s.hostname(),
@@ -241,6 +258,7 @@ public class ServerServiceImpl implements ServerService {
         tags,
         s.version(),
         s.createdAt(),
-        s.updatedAt());
+        s.updatedAt(),
+        cloudLink);
   }
 }

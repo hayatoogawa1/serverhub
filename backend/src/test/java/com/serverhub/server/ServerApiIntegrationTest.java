@@ -108,8 +108,15 @@ class ServerApiIntegrationTest {
         .andExpect(jsonPath("$.status").value("active"))
         .andExpect(jsonPath("$.virtualizationType").value("virtual"))
         .andExpect(jsonPath("$.version").value(0))
+        // クラウド連携なしのサーバーは cloudLink / cloudState を出さない（FR-CLOUD-01、加算的変更）
+        .andExpect(jsonPath("$.cloudLink").doesNotExist())
         .andExpect(
             jsonPath("$.tags", org.hamcrest.Matchers.containsInAnyOrder("web", "customer-x")));
+
+    mockMvc
+        .perform(authed(get("/api/v1/servers")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].cloudState").doesNotExist());
   }
 
   @Test

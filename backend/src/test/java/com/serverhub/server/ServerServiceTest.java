@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.serverhub.cloud.CloudLinkReader;
 import com.serverhub.common.error.ResourceNotFoundException;
 import com.serverhub.common.page.PageRequest;
 import com.serverhub.common.page.PageResponse;
@@ -33,6 +34,9 @@ class ServerServiceTest {
   @Mock private ServerDao serverDao;
   @Mock private TagDao tagDao;
   @Mock private ServerTagDao serverTagDao;
+
+  /** クラウド連携なしの既定挙動（未スタブで {@code Optional.empty()} / 空 Map）で十分。 */
+  @Mock private CloudLinkReader cloudLinkReader;
 
   @InjectMocks private ServerServiceImpl service;
 

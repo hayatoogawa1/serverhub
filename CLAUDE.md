@@ -297,9 +297,12 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
     `CloudStatePoller`（`@Scheduled`、`enabled=true` のみ、失敗時 `last_error` のみ・状態据え置き）+ `CloudProperties`
     （`serverhub.cloud.*`、既定 `enabled=false`）+ AWS SDK v2 `ec2` + `ServerCloudLinkDao` にポーラー用メソッド。
     BE 102 → 111。既存不変。ローカル/CI は AWS 非接続
-  - 9-3: `CloudLinkController` + `CloudLinkServiceImpl` + `PUT/DELETE /servers/{id}/cloud-link` + `refresh`（200）+
-    `cloudLink` を `ServerDetailResponse`、`cloudState`/`cloudStateFetchedAt` を `ServerSummaryResponse` に追加
-    （`ServerServiceImpl` で合成、一覧は `selectByServerIds` で N+1 回避）+ `409 CLOUD_LINK_CONFLICT`
+  - **9-3 完了**: `CloudLinkController` + `CloudLinkServiceImpl`（`@Transactional`、`ServerDao` で存在チェック）+
+    `PUT/DELETE /servers/{id}/cloud-link` + `POST .../refresh`（AWS 失敗でも 200 + `lastError`、provider 無効のみ 503）。
+    `cloudLink` を `ServerDetailResponse`、`cloudState`/`cloudStateFetchedAt` を `ServerSummaryResponse` に**加算**
+    （`ServerServiceImpl` が読み取り専用 `CloudLinkReader` で合成、一覧は `selectByServerIds` で N+1 回避）。
+    `CLOUD_LINK_CONFLICT`(409)・`CLOUD_PROVIDER_UNAVAILABLE`(503) を `ErrorCode`/`CloudExceptionHandler` に追加。
+    BE 111 → 134。既存不変（`servers`/`Status`/`servers.status` 無変更、レスポンスはフィールド追加のみ）
   - 9-4: FE `types/cloud` `api/cloud` `hooks/cloud` `CloudStateChip` + `ServerDetailView` の分離表示 + `CloudLinkFormModal`
   - 9-5: FE 一覧 AWS 列 + MSW + 仕上げ
   - 9-6: AWS IAM ポリシー文書 + デプロイ手順

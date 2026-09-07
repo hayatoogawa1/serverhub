@@ -6,6 +6,8 @@ import com.serverhub.common.page.PageResponse;
 import com.serverhub.common.page.SortDirection;
 import com.serverhub.server.ServerDao;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
  * メンテナンス履歴の業務ロジック（詳細設計 04-maintenance §4・§5、FR-MNT-01〜03）。
  *
  * <p>対象サーバーの存在確認のため {@code server} パッケージの {@link ServerDao} に依存する（D-MNT-03：BR-06
- * そのものであり避けられない必須の依存）。読み取りは {@code readOnly}、登録のみ個別に {@link Transactional} を付与する。
+ * そのものであり避けられない必須の依存）。読み取りは {@code readOnly}、登録のみ個別に {@link Transactional} を付与する。 登録は「重要な業務イベント」として
+ * ID のみの {@code INFO} ログを出す（05-cross-cutting §4.3）。
  */
 @Service
 @Transactional(readOnly = true)
 public class MaintenanceHistoryService {
+
+  private static final Logger log = LoggerFactory.getLogger(MaintenanceHistoryService.class);
 
   private final MaintenanceHistoryDao maintenanceHistoryDao;
   private final ServerDao serverDao;
@@ -91,6 +96,7 @@ public class MaintenanceHistoryService {
             null,
             null);
     MaintenanceHistory inserted = maintenanceHistoryDao.insert(toInsert).getEntity();
+    log.info("maintenance history created: id={} serverId={}", inserted.id(), request.serverId());
     return MaintenanceHistoryDetailResponse.from(inserted);
   }
 

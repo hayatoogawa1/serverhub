@@ -43,4 +43,13 @@ management:
 logging:
   level:
     root: INFO
+    # 開発時の詳細（本番プロファイルで INFO へ抑制する予定、requirements §12.6）
     com.serverhub: DEBUG
+  structured:
+    format:
+      # 構造化ログ（JSON）を標準出力へ。Spring Boot 標準の Structured Logging を使い
+      # 専用ライブラリ・logback-spring.xml を足さない（基本設計 05-cross-cutting D-XCUT-06 / D-XCUT-09）。
+      # traceId は MDC 経由で各行に自動付与される（RequestLoggingFilter）。
+      # service.name は spring.application.name（= serverhub）が自動で入る。
+      # ローカルで素のテキストが見たい場合は LOGGING_STRUCTURED_FORMAT_CONSOLE= で無効化できる。
+      console: ecs

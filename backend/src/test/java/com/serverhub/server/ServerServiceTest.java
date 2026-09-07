@@ -24,8 +24,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.seasar.doma.jdbc.BatchResult;
 import org.seasar.doma.jdbc.Result;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class ServerServiceTest {
 
   @Mock private ServerDao serverDao;
@@ -87,6 +89,30 @@ class ServerServiceTest {
     ArgumentCaptor<String> tagName = ArgumentCaptor.forClass(String.class);
     verify(tagDao, org.mockito.Mockito.times(2)).insertIgnoreConflict(tagName.capture());
     assertThat(tagName.getAllValues()).containsExactly("web", "db");
+  }
+
+  @Test
+  void create_emitsBusinessEventInfoLog_withIdOnly(CapturedOutput output) {
+    when(serverDao.selectIdByActiveHostname("secret-host-01")).thenReturn(Optional.empty());
+    Server inserted = sampleServer(1L, "secret-host-01");
+    when(serverDao.insert(any(Server.class))).thenReturn(new Result<>(1, inserted));
+    when(serverDao.selectActiveById(1L)).thenReturn(Optional.of(inserted));
+    when(serverTagDao.selectTagNamesByServerId(1L)).thenReturn(List.of());
+
+    service.create(createRequest("secret-host-01", List.of()));
+
+    // 05-cross-cutting §4.3: 業務イベントは 1 行の INFO。ID のみでホスト名（機密）は載せない
+    assertThat(output.getOut()).contains("server created: id=1");
+    assertThat(output.getOut()).doesNotContain("secret-host-01");
+  }
+
+  @Test
+  void delete_emitsBusinessEventInfoLog(CapturedOutput output) {
+    when(serverDao.updateDeletedAt(eq(5L), any())).thenReturn(1);
+
+    service.delete(5L);
+
+    assertThat(output.getOut()).contains("server deleted (logical): id=5");
   }
 
   @Test

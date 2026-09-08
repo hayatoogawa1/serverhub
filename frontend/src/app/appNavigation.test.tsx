@@ -61,20 +61,20 @@ describe('アプリのルーティング', () => {
     const user = userEvent.setup()
     const router = renderApp(['/servers?env=staging'])
 
-    // 一覧（staging 絞り込み）
-    const row = await screen.findByText('db-stg-01')
+    // 一覧（staging 絞り込み）。初回は遅延ロード + データ取得のため待ちを長めに取る
+    const row = await screen.findByText('db-stg-01', {}, { timeout: 3000 })
     expect(router.state.location.search).toContain('env=staging')
 
     // 詳細へ
     await user.click(row)
     await waitFor(() => expect(router.state.location.pathname).toBe('/servers/2'))
-    await screen.findByRole('heading', { level: 1, name: 'web-prod-01' })
+    await screen.findByRole('heading', { level: 1, name: 'web-prod-01' }, { timeout: 3000 })
 
     // 戻る → 一覧、クエリも元通り
     await act(() => router.navigate(-1))
     await waitFor(() => expect(router.state.location.pathname).toBe('/servers'))
     expect(router.state.location.search).toContain('env=staging')
-    expect(await screen.findByText('db-stg-01')).toBeInTheDocument()
+    expect(await screen.findByText('db-stg-01', {}, { timeout: 3000 })).toBeInTheDocument()
 
     // 進む → 詳細へ復帰
     await act(() => router.navigate(1))

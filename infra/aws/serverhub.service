@@ -1,0 +1,40 @@
+# ServerHub backend（Spring Boot jar）— systemd unit（非 Docker デプロイ）。
+#
+# 置き場所: /etc/systemd/system/serverhub.service
+# 有効化: systemctl daemon-reload && systemctl enable --now serverhub
+#
+# jar は /opt/serverhub/serverhub-backend.jar（バージョン付き jar へのシンボリックリンク）。
+# 環境変数（DB 接続先・プロファイル等）は /etc/serverhub/serverhub.env（600, root:serverhub）。
+
+[Unit]
+Description=ServerHub backend (Spring Boot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=serverhub
+Group=serverhub
+
+EnvironmentFile=/etc/serverhub/serverhub.env
+WorkingDirectory=/opt/serverhub
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/serverhub/serverhub-backend.jar
+
+# backend はループバックのみ（nginx がリバースプロキシ）。application.yml/env で
+# server.address=127.0.0.1 を指定する運用でも良いが、ここでは SG で 8080 を塞ぐ前提。
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+# 最小権限のハードニング
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/serverhub
+AmbientCapabilities=
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

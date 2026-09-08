@@ -1,11 +1,14 @@
-# AWS 連携（EC2 実行状態の参照）
+# AWS — EC2 実行状態の参照 + ServerHub 本体のデプロイ
 
-ServerHub の「AWS 連携」機能（FR-CLOUD-01、設計 [07-aws-ec2-integration](../../docs/design/basic/07-aws-ec2-integration.md)）を
-本番で有効化するための IAM 設定とデプロイ手順。
+このディレクトリは 2 つを扱う:
 
-> **既定は無効。** ローカル開発・CI では `serverhub.cloud.enabled=false`（`DisabledCloudStateProviderImpl`）で
-> 動作し、AWS には一切アクセスしない。有効化しなくても ServerHub の全機能（台帳・検索・メンテ履歴・
-> ダッシュボード）は動く。
+1. **§1〜6**: 「AWS 連携」機能（FR-CLOUD-01、[07-aws-ec2-integration](../../docs/design/basic/07-aws-ec2-integration.md)）の
+   IAM 設定と有効化手順。**既定は無効**。ローカル / CI では `serverhub.cloud.enabled=false`
+   （`DisabledCloudStateProviderImpl`）で動作し、AWS に一切アクセスしない。有効化しなくても
+   ServerHub の全機能（台帳・検索・メンテ履歴・ダッシュボード）は動く。
+2. **§7**: ServerHub 本体を AWS へデプロイする手順（EC2 1 台・非 Docker・DB は Neon。
+   [ADR 0005](../../docs/adr/0005-deployment-ec2-single-instance.md)）。IAM ロールは §1〜6 の
+   `DescribeInstances` ポリシーをそのまま流用する。
 
 ---
 
@@ -174,3 +177,120 @@ CDK / Terraform で管理する場合も同じポリシー JSON をそのまま�
 - テーブル `server_cloud_links` の紐付けデータは残るが、参照・更新されなくなる（画面には「AWS 未連携」ではなく
   最後の状態が「情報が古い」状態で残る点に注意。完全に消すなら各サーバーで「連携を解除」）。
 - IAM ロールは残しておいて問題ない（`DescribeInstances` の読み取り専用のみ）。
+
+---
+
+## 7. ServerHub 本体のデプロイ（EC2 1 台・非 Docker）
+
+構成の決定は [ADR 0005](../../docs/adr/0005-deployment-ec2-single-instance.md)。
+
+```
+[EC2 1台]  Amazon Linux 2023 / t3.small
+  ├─ nginx（OS パッケージ）        :443  TLS 終端 + SPA 配信 + /api → 127.0.0.1:8080
+  └─ serverhub-backend.jar（systemd）  :8080（ループバックのみ）
+        └─→ Neon（managed PostgreSQL, SSL）
+IAM インスタンスプロファイル: AmazonSSMManagedInstanceCore + serverhub-ec2-readonly
+運用アクセス: SSM Session Manager（SSH ポートは開けない）
+```
+
+配置ファイル（このディレクトリ）:
+
+| ファイル | 置き場所 | 役割 |
+|---|---|---|
+| `nginx-serverhub.conf` | `/etc/nginx/conf.d/serverhub.conf` | SPA 配信 + `/api` プロキシ + TLS（certbot が 443 を追記） |
+| `serverhub.service` | `/etc/systemd/system/serverhub.service` | backend jar の systemd unit |
+| `serverhub.env.example` | `/etc/serverhub/serverhub.env`（実値を入れる） | DB 接続先・プロファイル・cloud 設定 |
+| `bootstrap.sh` | — | 初回セットアップ（root で 1 回） |
+| `deploy.sh` | — | 更新デプロイ（Release から取得して差し替え） |
+
+### 7.1 AWS 側の準備（コンソール / CLI）
+
+1. **IAM ロール**: §2 のポリシー `serverhub-ec2-readonly` と AWS 管理ポリシー
+   `AmazonSSMManagedInstanceCore` をアタッチしたロール `serverhub-app-role`（信頼: EC2）を作成。
+2. **EC2 インスタンス**: Amazon Linux 2023 / t3.small / gp3 20GiB。上記ロールをインスタンスプロファイルに指定。
+3. **Elastic IP** を割り当て。
+4. **セキュリティグループ**: インバウンドは **80 / 443 のみ**（`0.0.0.0/0`）。**22 は開けない**。
+5. **Neon**: 本番用ブランチ / DB / ロールを作り、JDBC 接続文字列（`?sslmode=require`）を控える。
+6. **ドメイン**: A レコードを Elastic IP へ（TLS の前提。未取得なら 7.3 まで進めて 7.4 は後回し）。
+
+### 7.2 EC2 初回セットアップ
+
+SSM Session Manager で接続し:
+
+```bash
+sudo dnf install -y git
+git clone https://github.com/hayatoogawa1/serverhub.git
+cd serverhub
+sudo bash infra/aws/bootstrap.sh <your-domain>     # 例: serverhub.example.com
+```
+
+`bootstrap.sh` がやること: パッケージ導入（Java 17 / nginx / certbot / git）、`serverhub` システムユーザー、
+`/opt/serverhub` `/var/www/serverhub` `/etc/serverhub` 作成、systemd unit 配置、nginx server block（80 番）配置、
+SELinux `httpd_can_network_connect` 有効化。
+
+### 7.3 設定値を入れる
+
+```bash
+sudo vi /etc/serverhub/serverhub.env
+#   SPRING_PROFILES_ACTIVE=neon,prod
+#   SPRING_DATASOURCE_URL/USERNAME/PASSWORD = Neon の値
+#   SERVERHUB_CLOUD_ENABLED=true / SERVERHUB_CLOUD_AWS_REGION=ap-northeast-1
+```
+
+### 7.4 TLS 証明書（ドメインがある場合）
+
+```bash
+sudo certbot --nginx -d <your-domain> --redirect --agree-tos -m <your-email> -n
+sudo systemctl enable --now certbot-renew.timer      # 自動更新
+```
+
+### 7.5 初回デプロイ
+
+先に GitHub でタグを打つと Actions（`release.yml`）が jar とフロント dist をビルドして Release に添付する:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0     # 手元 or GitHub UI で
+```
+
+EC2 上で:
+
+```bash
+cd ~/serverhub && git pull
+bash infra/aws/deploy.sh v1.0.0
+```
+
+`deploy.sh`: Release からアーティファクト取得 → `SHA256SUMS` 検証 → jar 配置 + シンボリックリンク →
+`dist` 配置 → `systemctl restart serverhub` → `/actuator/health` を待つ → `nginx -s reload`。
+ヘルスチェックに失敗したら前バージョンの jar に戻す。
+
+### 7.6 動作確認
+
+- `https://<domain>/` → ログイン画面 + 証明書有効、HTTP→HTTPS リダイレクト
+- ログイン: `admin@serverhub.local` / **`serverhub-demo-2026`**（`prod` プロファイルの `db/prod/V100` で
+  `password` から変更される。デモ用でありポートフォリオ公開を想定した固定値）
+- サーバー CRUD / 検索 / メンテ履歴 / ダッシュボード
+- Swagger UI（`/swagger-ui.html`）が**認証必須**になっている
+- サーバー詳細「AWS 連携」で実 EC2 の Instance ID を登録 →「今すぐ更新」→ 実行状態が出る（IAM ロール経由）
+- DevTools でセッション Cookie に `Secure` 属性
+
+### 7.7 更新 / ロールバック
+
+```bash
+# 更新: 新しいタグを push → Release 生成を待つ → EC2 で
+bash infra/aws/deploy.sh v1.1.0
+
+# ロールバック（アプリのみ）: 直前の jar に戻す
+sudo ln -sfn /opt/serverhub/serverhub-backend-<前のバージョン>.jar /opt/serverhub/serverhub-backend.jar
+sudo systemctl restart serverhub
+```
+
+- **DB マイグレーションは前方のみ**。スキーマ変更を含むリリースのロールバックは、jar を戻すだけでは
+  不整合になりうる。`db/migration` の差分を確認し、必要なら手動で対応する。
+- ログ: `journalctl -u serverhub -f`（構造化 JSON）。nginx: `/var/log/nginx/`。
+
+### 7.8 運用メモ
+
+- **バックアップ**: Neon の PITR（自動）。EC2 側にアプリの状態は持たない。
+- **OS 更新**: `sudo dnf upgrade` を定期的に。`dnf-automatic` 任意。
+- **再起動耐性**: `serverhub` / `nginx` は `systemctl enable` 済み。EC2 の Auto Recovery を有効に。
+- **監視**: 最低限 `/actuator/health`。CloudWatch agent（メモリ / ディスク）は任意。

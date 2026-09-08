@@ -48,7 +48,8 @@
 | テスト(BE) | JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | - |
 | テスト(FE) | Vitest 4 / React Testing Library / MSW 2 / jsdom | - |
 | コンテナ | Docker / Docker Compose（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)） | - |
-| クラウド | AWS SDK for Java v2（`ec2:DescribeInstances` のみ・任意機能）。実デプロイ構成は未確定 | 2.54.13 |
+| クラウド | AWS SDK for Java v2（`ec2:DescribeInstances` のみ・任意機能） | 2.54.13 |
+| デプロイ | EC2 1 台（非 Docker）+ nginx + systemd、DB は Neon（[ADR 0005](docs/adr/0005-deployment-ec2-single-instance.md)） | - |
 
 > バージョン選定の根拠は [docs/adr/](docs/adr/)（Architecture Decision Record）に記録する。
 
@@ -208,6 +209,14 @@ make app-down         # 停止（DB データは残る。破棄は down -v を�
 - 使う AWS API は `ec2:DescribeInstances`（参照）のみ。起動・停止などの操作機能は無い。
 - 有効化手順・IAM ポリシー（最小権限）・環境変数は [infra/aws/README.md](infra/aws/README.md)。
 
+### 本番デプロイ（EC2 1 台・非 Docker、Phase 10）
+
+構成は **EC2 1 台に nginx（静的配信 + `/api` プロキシ + TLS）+ systemd で backend jar、DB は Neon 継続**
+（[ADR 0005](docs/adr/0005-deployment-ec2-single-instance.md)）。リリースは GitHub Actions（`release.yml`、
+タグ `v*`）が jar とフロント dist をビルドして Release に添付し、EC2 上で `infra/aws/deploy.sh <tag>` が
+取得・差し替え・ヘルスチェック・自動ロールバックを行う。初回セットアップ〜動作確認の手順は
+[infra/aws/README.md §7](infra/aws/README.md)。
+
 ---
 
 ## 開発ルール
@@ -241,7 +250,7 @@ git hooks は `make setup`（または `make hooks`）で有効化する。緊�
 | 詳細設計書 | [docs/design/detail/](docs/design/detail/) | Phase 3（完了） |
 | DB 設計 | [docs/db/](docs/db/) | Phase 4（完了） |
 | Frontend 構成 | [frontend/README.md](frontend/README.md) | Phase 6（完了） |
-| AWS 連携（IAM / デプロイ手順） | [infra/aws/README.md](infra/aws/README.md) | Phase 9（完了） |
+| AWS 連携 IAM + 本番デプロイ手順 | [infra/aws/README.md](infra/aws/README.md) | Phase 9 / 10 |
 | Phase 10 レビュー観点バックログ | [docs/design/phase10-review-backlog.md](docs/design/phase10-review-backlog.md) | Phase 10 |
 | ADR（設計判断ログ） | [docs/adr/](docs/adr/) | 随時 |
 | API 仕様（Swagger UI） | `http://localhost:8080/swagger-ui.html`（起動後） | Phase 5 以降 |

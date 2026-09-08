@@ -54,21 +54,24 @@ flowchart LR
   操作: `make app-up` / `app-seed` / `app-down` / `app-logs`。
 - スキーマ・管理ユーザーは Backend 起動時に Flyway（V1/V2）。デモデータは `make app-seed`。
 
-### 1.4 本番想定（詳細は Phase 9）
+### 1.4 本番構成（Phase 10 確定 → [ADR 0005](../../adr/0005-deployment-ec2-single-instance.md)）
 
 ```mermaid
 flowchart LR
-  U[利用者] -->|HTTPS| ALB[ALB<br/>TLS 終端 / HTTP→HTTPS]
-  ALB -->|"すべて"| NG[frontend コンテナ<br/>nginx: SPA + /api リバースプロキシ]
-  NG -->|"/api/v1/*"| APP[backend コンテナ<br/>Spring Boot]
-  APP -->|"JDBC / sslmode=require"| PDB[(本番 DB<br/>Neon or RDS ※N2)]
+  U[利用者] -->|HTTPS| NG[nginx（EC2 上・OS パッケージ）<br/>TLS 終端 / SPA 配信 / /api リバースプロキシ]
+  NG -->|"/api/v1/*  (127.0.0.1:8080)"| APP[backend jar<br/>systemd: serverhub.service]
+  APP -->|"JDBC / sslmode=require"| PDB[(本番 DB<br/>Neon ※N2 確定)]
+  APP -.->|"IAM インスタンスプロファイル<br/>ec2:DescribeInstances"| EC2API[(AWS EC2 API)]
 ```
 
-- TLS 終端は ALB、証明書は ACM。HTTP は HTTPS へリダイレクト。HSTS を付与（requirements §10.1.13/14）。
-- Backend は `X-Forwarded-*` を尊重（`server.forward-headers-strategy`）。
-- Phase 8 で作った frontend / backend イメージ（§1.3 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)）をそのまま載せる。
-  コンテナ基盤（ECS / EC2 等）・本番 DB（N2）・AWS EC2 連携（[E2](../../requirements/open-issues.md)）は **Phase 9 で確定**。
+- **EC2 1 台・非 Docker**。nginx（OS パッケージ）が TLS 終端 + SPA 静的配信 + `/api` を
+  `127.0.0.1:8080` の backend jar へリバースプロキシ。同一オリジンは §1.1 / ADR 0004 のまま。
+- TLS は Let's Encrypt（certbot、自動更新）。ALB は使わない（1 台構成・コスト最小）。
+- Backend は `application-prod.yml` で `X-Forwarded-*` を尊重（`server.forward-headers-strategy=framework`）。
+- 本番 DB は **Neon 継続**（N2 確定）。AWS 認証は IAM インスタンスプロファイル（静的キー非保存）。
+- リリースは GitHub Actions（`release.yml`）→ `infra/aws/deploy.sh`。手順は [infra/aws/README.md §7](../../../infra/aws/README.md)。
 - MVP は単一インスタンス前提（requirements §10.3 / S6）。冗長化・オートスケールは将来。
+- コンテナ版（§1.3 / [ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)）はローカルフルスタック確認・将来の基盤移行用に維持。
 
 ## 2. アプリケーションアーキテクチャ
 
@@ -209,10 +212,12 @@ utils/  constants/  app/（合成ルート）
 
 ### 4.4 デプロイ / CI・CD（概要）
 
-- CI: GitHub Actions（`./gradlew check` + FE 全チェック）。既存。
+- CI: GitHub Actions `ci.yml`（`./gradlew check` + FE 全チェック）。既存。
 - **コンテナ化: Phase 8 完了**（[ADR 0004](../../adr/0004-containerization-nginx-spa-reverse-proxy.md)、§1.3）。
   `backend/Dockerfile`・`frontend/Dockerfile`（+ nginx）・`infra/docker/docker-compose.app.yml`。
-- CD・インフラ構築（AWS）: **Phase 9** で設計。Phase 8 のイメージを ALB → nginx / Backend の構成で載せる。
+- **本番デプロイ: Phase 10 確定**（[ADR 0005](../../adr/0005-deployment-ec2-single-instance.md)、§1.4）。
+  EC2 1 台・非 Docker。リリースは Actions `release.yml`（タグ `v*` で jar + フロント dist を Release へ）、
+  EC2 上で `infra/aws/deploy.sh` が取得・差し替え・ヘルスチェック・自動ロールバック。
 - Neon ブランチを PR ごとに CI で使う構成は将来（open-issues N1）。
 
 ## 5. この文書で追加した設計判断

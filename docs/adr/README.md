@@ -12,3 +12,4 @@
 | [0002](0002-frontend-technology-versions.md) | Frontend の技術スタックとバージョン確定 | Accepted |
 | [0003](0003-database-neon-with-local-docker-fallback.md) | 開発 DB は Neon 主 + ローカル Docker フォールバック | Accepted |
 | [0004](0004-containerization-nginx-spa-reverse-proxy.md) | コンテナ化 — nginx が SPA 配信 + `/api` を Backend へリバースプロキシ | Accepted |
+| [0005](0005-deployment-ec2-single-instance.md) | 本番デプロイ — EC2 1 台（非 Docker）+ Neon | Accepted |

@@ -184,7 +184,7 @@ SSL 期限管理、定期メンテナンス、障害履歴、CSV インポート
 | DB | PostgreSQL 16。`servers` / `maintenance_histories` は論理削除、`server_tags` は物理削除 |
 | Frontend | React 19 / TypeScript / Vite / MUI / React Router / Axios / TanStack Query。API は `api/` 層経由 |
 | API | REST。仕様は OpenAPI（springdoc、コードファースト）で管理 |
-| インフラ | 開発 DB は **Neon（クラウド PostgreSQL）を主**とし、オフラインデモ用にローカル Docker Compose へ環境変数で切り替え可能（[ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md)）。デプロイ先は AWS（Phase 9 で詳細化。本番 DB は Neon 継続か RDS かを Phase 9 で判断） |
+| インフラ | 開発 DB は **Neon（クラウド PostgreSQL）を主**とし、オフラインデモ用にローカル Docker Compose へ環境変数で切り替え可能（[ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md)）。デプロイ先は **AWS EC2 1 台（非 Docker、nginx + systemd）、本番 DB は Neon 継続**（Phase 10 確定 → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md)） |
 
 ### 6.3 運用・体制制約
 
@@ -845,7 +845,7 @@ ServerHub はホスト名・IP アドレス・担当者・メンテナンス履�
 
 | 分類 | 項目 |
 |---|---|
-| **MVP 必須（実装する）** | 認証（10.1.2）、セッション保護・Cookie 属性（10.1.3）、CSRF 対策（10.1.4）、認証必須の徹底（10.1.5）、Backend 入力値検証（10.1.6）、SQL Injection 対策（10.1.7）、XSS 対策（10.1.8）、秘密情報を保存しない（10.1.9）、機密情報のログ出力禁止（10.1.11）、安全なエラー処理（10.1.12）、低リスクな HTTP セキュリティヘッダー（10.1.13）、Secret のハードコード禁止（10.1.16）、アプリ DB ユーザーの権限最小化（10.1.15）、本番 HTTPS（10.1.14、Phase 9 で構成確定） |
+| **MVP 必須（実装する）** | 認証（10.1.2）、セッション保護・Cookie 属性（10.1.3）、CSRF 対策（10.1.4）、認証必須の徹底（10.1.5）、Backend 入力値検証（10.1.6）、SQL Injection 対策（10.1.7）、XSS 対策（10.1.8）、秘密情報を保存しない（10.1.9）、機密情報のログ出力禁止（10.1.11）、安全なエラー処理（10.1.12）、低リスクな HTTP セキュリティヘッダー（10.1.13）、Secret のハードコード禁止（10.1.16）、アプリ DB ユーザーの権限最小化（10.1.15）、本番 HTTPS（10.1.14、EC2 nginx + Let's Encrypt → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md)） |
 | **MVP は設計のみ（拡張点を残す）** | ロールベース認可（10.1.5）、機密情報のマスキング表示制御（10.1.10）、操作ログ・監査（10.1.11）、CSP の本格運用（10.1.13）、Secrets Manager 連携（10.1.16）、CORS の厳密設定（10.1.17、同一オリジン配信のため通常不要） |
 | **将来対応** | ブルートフォース時のアカウントロック（10.1.2）、認証情報管理機能（専用 Secret Manager、10.1.9）、依存脆弱性の継続スキャン自動化の高度化（10.1.18） |
 
@@ -1085,19 +1085,20 @@ Spring Security で設定可能なヘッダーのうち、**Frontend / Swagger U
 
 #### 10.1.14 通信セキュリティ（HTTPS）
 
-- **本番**: HTTPS 必須。想定構成（Phase 9 で確定）:
+- **本番**: HTTPS 必須。構成（Phase 10 で確定 → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）:
 
   ```
-  Client ──HTTPS──> ALB（TLS 終端）──(VPC 内)──> Backend
+  Client ──HTTPS──> nginx（EC2 上、TLS 終端）──(127.0.0.1)──> Backend jar
   ```
 
-  - TLS 終端は ALB。証明書は ACM。
-  - HTTP でのアクセスは HTTPS へリダイレクト（ALB リスナールール）。
+  - TLS 終端は EC2 ホストの nginx。証明書は Let's Encrypt（certbot、自動更新）。
+    ALB は使わない（1 台構成・コスト最小）。
+  - HTTP でのアクセスは HTTPS へリダイレクト（certbot `--redirect`）。
   - HSTS を本番レスポンスに付与（10.1.13）。
 - **開発**: `http://localhost` で動作。`Secure` Cookie / HSTS は無効。
   → **環境差異**として明記し、`application-*.yml`（プロファイル）で切り替える。
-- Backend は「HTTPS で提供されている前提」の設定（`server.forward-headers-strategy` 等で
-  ALB の `X-Forwarded-*` を尊重）を本番プロファイルで行う。
+- Backend は「HTTPS で提供されている前提」の設定（`application-prod.yml` の
+  `server.forward-headers-strategy=framework` で nginx の `X-Forwarded-*` を尊重）を本番プロファイルで行う。
 
 #### 10.1.15 DB セキュリティ
 
@@ -1117,7 +1118,9 @@ Spring Security で設定可能なヘッダーのうち、**Frontend / Swagger U
 - **置く場所**:
   - ローカル開発: `.env`（Git 管理外。`.gitignore` 済み）+ Docker Compose の `env_file` /
     Spring の環境変数（`SPRING_DATASOURCE_*`）。
-  - 本番: AWS Secrets Manager / SSM Parameter Store（Phase 9 で確定）。
+  - 本番: EC2 上の `/etc/serverhub/serverhub.env`（`root:serverhub` 600、Git 管理外。
+    systemd の `EnvironmentFile`）。AWS 認証情報はそもそも保存せず IAM インスタンスプロファイルで解決。
+    将来スケール時は Secrets Manager / SSM Parameter Store へ（[ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）。
 - **サンプル**: `.env.example` に**キーのみ**（実値なし）。
 - **開発用既定値の扱い（S7 確定）**: `application.yml` に**安全なダミーの既定値**
   （`SPRING_DATASOURCE_PASSWORD:changeme` 等、`.env.example` と同一）を設定してよい。
@@ -1202,13 +1205,14 @@ Phase 5（DAO テスト）で主要クエリを `EXPLAIN ANALYZE` で確認し�
   - DB エラー（接続断・制約違反）: `500` or `409` に変換。トランザクションはロールバック。
 - **データ整合性**: 複数テーブルにまたがる更新（サーバー + `server_tags`）は Service 層の
   `@Transactional` で 1 トランザクション（`CLAUDE.md` §3）。
-- **バックアップ**: 通常開発の Neon は PITR（Point-in-Time Restore）を持つ。本番のバックアップ方針は
-  Phase 9 で確定（Neon 継続なら PITR、RDS なら自動バックアップ / スナップショット）。
+- **バックアップ**: 本番も DB は Neon 継続（N2 確定、[ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）で
+  PITR（Point-in-Time Restore）を利用。EC2 側にアプリの永続状態は持たない。
   オフラインデモのローカル Docker はボリューム破棄で作り直す（`make db-reset` → `make db-seed`）。
 - **再起動**: 起動時に Flyway がマイグレーションを自動適用。セッションはインメモリのため
   再起動でログインし直しになる（小規模につき許容、S6）。
-- **ヘルスチェック**: `/actuator/health`。Docker Compose のヘルスチェック、本番は ALB の
-  ターゲットグループヘルスチェックに利用（`liveness` / `readiness` プローブを有効化、既存 `application.yml`）。
+- **ヘルスチェック**: `/actuator/health`（`liveness` / `readiness` プローブ有効、既存 `application.yml`）。
+  Docker Compose のヘルスチェック、本番は `deploy.sh` が再起動後のデプロイ判定に使う（`"status":"UP"` を待つ）。
+  EC2 の Auto Recovery / systemd `Restart=on-failure` でプロセス障害から復帰。
 
 ### 10.4 保守性
 
@@ -1355,7 +1359,11 @@ erDiagram
 ### 12.5 初期データ（シード）
 
 - **ユーザー**: 1 名以上を Flyway シード or 初期化スクリプトで作成（メールアドレス + bcrypt ハッシュ）。
-  実際のパスワードはコミットしない（開発用のダミーユーザーのみリポジトリに含めてよい）。
+  デモ用のダミーアカウントのみリポジトリに含めてよい（実在の秘密ではない、§10.1.18）。
+  - `V2__seed_admin_user.sql`（全環境）: `admin@serverhub.local` / `password`。
+  - `db/prod/V100__update_admin_password.sql`（`prod` プロファイルのみ、[ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）:
+    公開環境では総当たりされにくいデモ値 `serverhub-demo-2026` に変更する。ローカル / CI は
+    `db/migration` のみ適用され `password` のまま（既存テスト不変）。
 - **オフラインデモ用シード**（タグ / サーバー / 履歴のダミー）: `infra/docker/initdb/01_seed.sql` に用意し、
   ローカル Docker DB へ `make db-seed`（Flyway 適用後に `psql` で流し込み、冪等）で投入する
   （[ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md)）。**実在しない値のみ**（§10.1.18）。

@@ -4,7 +4,7 @@
 実装・設計の判断に迷ったらまずここを参照する。ここに書かれていない重大な判断は
 勝手に行わず、開発者（プロジェクトオーナー）に確認する。
 
-> Phase 9（AWS / FR-CLOUD-01）完了。Phase 10（レビュー・改善）へ。各フェーズの決定に伴い随時更新する。
+> Phase 10（レビュー・改善）進行中（Phase 1〜9 完了）。各フェーズの決定に伴い随時更新する。
 
 ---
 
@@ -199,7 +199,8 @@ utils/ constants/ app/（合成ルート）
 Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳細設計 → 4 DB 設計 →
 5 Backend 実装 → 6 Frontend 実装 → 7 テスト → 8 Docker → 9 AWS → 10 レビュー・改善。
 
-**現在: Phase 9（AWS）完了 → Phase 10（レビュー・改善）へ。**
+**現在: Phase 10（レビュー・改善）進行中。** レビュー観点の棚卸しと優先度は
+[docs/design/phase10-review-backlog.md](docs/design/phase10-review-backlog.md)。
 Phase 8 はコンテナ化（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、#46）。
 **Phase 9 = FR-CLOUD-01「AWS EC2 の実行状態を ServerHub 上で参照」**（設計
 [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)、PR #47 で確定、実装 #48〜#53）。
@@ -244,8 +245,8 @@ BE 89→134 / FE 123→148、いずれも既存不変。
 要件レベルの未決は [docs/requirements/open-issues.md](docs/requirements/open-issues.md) で管理。
 Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
-- 開発 DB ポートの `127.0.0.1` バインド（S2）、セッションストア（S6）
-- Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → Phase 9）
+- 開発 DB ポートの `127.0.0.1` バインド（S2 → Phase 10 PR-C）、セッションストア（S6）
+- Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → 要オーナー判断、[phase10 backlog](docs/design/phase10-review-backlog.md) #11）
 
 ### 確定済み（履歴）
 

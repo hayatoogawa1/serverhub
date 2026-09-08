@@ -26,6 +26,14 @@ doma:
   # Doma の例外を Spring の DataAccessException 系へ変換する
   exception-translation-enabled: true
 
+server:
+  servlet:
+    session:
+      # アイドルタイムアウト 30 分（open-issues S4 / requirements §10.1.3）。
+      # 「最後の API リクエストから 30 分リクエストが無ければセッション無効化・再ログイン要求」。
+      # Tomcat 既定と同値だが、確定仕様として明示する。
+      timeout: 30m
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

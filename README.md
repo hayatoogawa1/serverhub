@@ -5,7 +5,9 @@
 管理対象サーバーの情報とメンテナンス情報を一元管理し、検索・確認・更新・履歴確認などの
 運用業務を効率化することを目的とする。ポートフォリオ用途も兼ねる。
 
-> 開発中（Phase 4 DB 設計完了 → Phase 5 Backend 実装へ）。記載内容は各フェーズの進行に伴い更新されます。
+> 開発中（Phase 1〜9 完了 → Phase 10 レビュー・改善）。MVP 機能（認証 / サーバー CRUD・検索 /
+> タグ / メンテナンス履歴 / ダッシュボード）+ コンテナ化 + AWS EC2 実行状態の参照（任意機能）まで実装済み。
+> 記載内容は各フェーズの進行に伴い更新されます。
 > 要件は [docs/requirements/](docs/requirements/)、設計判断は [docs/adr/](docs/adr/) を参照。
 
 ---
@@ -42,11 +44,11 @@
 | | TanStack Query | 5.x |
 | | Lint / Format | ESLint 10 flat + typescript-eslint / Prettier 3 |
 | | Node.js | 24（`.nvmrc`、Active LTS） |
-| | グラフ | Recharts（候補・未確定） |
+| | グラフ | Recharts（確定 → [06-ui](docs/design/basic/06-ui.md) D-UI-01） |
 | テスト(BE) | JUnit 5 / AssertJ / Mockito / Testcontainers 2.x | - |
 | テスト(FE) | Vitest 4 / React Testing Library / MSW 2 / jsdom | - |
-| コンテナ | Docker / Docker Compose | - |
-| クラウド | AWS（Phase 9 で詳細化） | - |
+| コンテナ | Docker / Docker Compose（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)） | - |
+| クラウド | AWS SDK for Java v2（`ec2:DescribeInstances` のみ・任意機能）。実デプロイ構成は未確定 | 2.54.13 |
 
 > バージョン選定の根拠は [docs/adr/](docs/adr/)（Architecture Decision Record）に記録する。
 
@@ -108,8 +110,6 @@ DB は環境変数で接続先を切り替える（[docs/adr/0003](docs/adr/0003
 
 ### セットアップ手順
 
-> Backend/Frontend の実装は Phase 5〜6。
-
 すべてリポジトリルートで実行する。
 
 ```bash
@@ -146,7 +146,7 @@ make fe-dev
 
 ### DB の初期化
 
-- **スキーマ（テーブル等）**: Flyway で管理する（Neon / ローカルとも同じ。Backend 起動時に自動適用予定）。
+- **スキーマ（テーブル等）**: Flyway で管理する（Neon / ローカルとも同じ。Backend 起動時に自動適用される）。
 - **オフラインデモ用シードデータ**（デモユーザー・サーバー・タグ・履歴）:
   `infra/docker/initdb/01_seed.sql`。Flyway 適用後に `make db-seed` で投入する（冪等）。
   詳細は [infra/docker/initdb/README.md](infra/docker/initdb/README.md)。
@@ -236,9 +236,12 @@ git hooks は `make setup`（または `make hooks`）で有効化する。緊�
 
 | ドキュメント | 場所 | フェーズ |
 |---|---|---|
-| 要件定義書 | [docs/requirements/](docs/requirements/) | Phase 1 |
-| 基本設計書 | [docs/design/basic/](docs/design/basic/) | Phase 2（完了） |
+| 要件定義書 | [docs/requirements/](docs/requirements/) | Phase 1（完了） |
+| 基本設計書 | [docs/design/basic/](docs/design/basic/) | Phase 2（完了）+ [07 AWS EC2 連携](docs/design/basic/07-aws-ec2-integration.md)（Phase 9） |
 | 詳細設計書 | [docs/design/detail/](docs/design/detail/) | Phase 3（完了） |
 | DB 設計 | [docs/db/](docs/db/) | Phase 4（完了） |
+| Frontend 構成 | [frontend/README.md](frontend/README.md) | Phase 6（完了） |
+| AWS 連携（IAM / デプロイ手順） | [infra/aws/README.md](infra/aws/README.md) | Phase 9（完了） |
+| Phase 10 レビュー観点バックログ | [docs/design/phase10-review-backlog.md](docs/design/phase10-review-backlog.md) | Phase 10 |
 | ADR（設計判断ログ） | [docs/adr/](docs/adr/) | 随時 |
 | API 仕様（Swagger UI） | `http://localhost:8080/swagger-ui.html`（起動後） | Phase 5 以降 |

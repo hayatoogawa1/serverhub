@@ -293,15 +293,21 @@ serverhub:
 - 静的キーはリポジトリ・DB・`.env`（コミット対象）に置かない（BR-11 / §10.1.9）。`.env.example` は
   region と enabled のコメントのみ。
 
-### 6.5 依存追加
+### 6.5 依存追加（9-2 / fix で実装）
 
 `backend/build.gradle.kts`:
 ```kotlin
-implementation(platform("software.amazon.awssdk:bom:<version>"))
+implementation(platform("software.amazon.awssdk:bom:2.54.13"))
 implementation("software.amazon.awssdk:ec2")
+implementation("software.amazon.awssdk:url-connection-client") // 軽量 HTTP（netty 回避）
+implementation("software.amazon.awssdk:sso")                    // SSO プロファイルの解決に必要
+implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC トークン交換）
 ```
-- SDK v2。`ec2` モジュールのみ（`sts` は IAM ロール利用時に SDK が必要なら追加）。
-- イメージサイズ増を確認（ADR 0004 の検証項目）。
+- SDK v2。`ec2` + 同期 HTTP クライアント。**`sso` / `ssooidc` は IAM Identity Center（SSO）プロファイルを
+  既定クレデンシャルチェーンで解決するために必須**（無いと `SdkClientException: ... must add a dependency
+  on the 'sso' and 'ssooidc' modules`）。本番の IAM ロールだけなら不要だが、ローカル検証で SSO を使うため入れる。
+- 起動時に `CloudStartupLogger` が `cloud integration: enabled=…, provider=…, region=…` を 1 行 INFO 出力
+  （設定ミスの切り分け用）。
 
 ### 6.6 エラー設計（[01-common §3](../detail/01-common.md)）
 

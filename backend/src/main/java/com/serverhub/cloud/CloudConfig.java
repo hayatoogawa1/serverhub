@@ -12,6 +12,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *   <li>{@link CloudProperties} は常に登録（9-3 の Service が {@code stalenessThreshold} を参照するため）。
  *   <li>スケジューリング（{@link CloudStatePoller}）は {@code serverhub.cloud.enabled=true} のときだけ有効化する。
  * </ul>
+ *
+ * <p>起動時の有効設定ログは {@link CloudStartupLogger}。
  */
 @Configuration
 @EnableConfigurationProperties(CloudProperties.class)

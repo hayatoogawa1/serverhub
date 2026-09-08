@@ -52,6 +52,10 @@ dependencies {
     implementation("software.amazon.awssdk:ec2")
     // 低ボリュームの同期ポーリング用に軽量な HTTP クライアント（netty を避ける）
     implementation("software.amazon.awssdk:url-connection-client")
+    // IAM Identity Center（SSO）プロファイルからクレデンシャルを解決するために必要
+    // （既定クレデンシャルチェーンが SSO プロファイルを読むための任意モジュール）。
+    implementation("software.amazon.awssdk:sso")
+    implementation("software.amazon.awssdk:ssooidc")
 
     // --- テスト ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")

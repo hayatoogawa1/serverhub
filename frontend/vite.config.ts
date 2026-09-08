@@ -6,6 +6,22 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // 変わりにくい大きめの依存を安定チャンクに固定し、リピート訪問のキャッシュ効率を上げる。
+        // recharts はルート分割（DashboardPage のみ）で別チャンクになるためここには含めない。
+        manualChunks: (id) => {
+          if (!id.includes('node_modules')) return undefined
+          if (/[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react'
+          }
+          if (/[\\/](@mui|@emotion)[\\/]/.test(id)) return 'mui'
+          return undefined
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

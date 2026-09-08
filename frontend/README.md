@@ -29,7 +29,7 @@ Backend を先に起動しておくこと（リポジトリルート README 参�
 
 ```
 src/
-├── app/          合成ルート（App / router / queryClient / theme）
+├── app/          合成ルート（App / router / routePages（遅延ロード）/ queryClient / theme）
 ├── pages/        ルーティング単位の画面（SC-01〜08）。components + hooks を組み立てる
 ├── components/
 │   ├── common/       DataTable / Pagination / Modal / ConfirmDialog / StatusChip /
@@ -75,7 +75,9 @@ src/
 
 - 一覧に列を足す → `types/server.ts`。Backend の Summary DTO に無ければ**そこで止める**（FE で N+1 しない）
 - 新しい API を呼ぶ → `api/<domain>.ts`（interface にメソッド追加 + Impl）→ `hooks/<domain>.ts` でラップ
-- 新しい画面 → `pages/XxxPage.tsx` + 必要なら `components/<domain>/` + `app/router.tsx` にルート追加
+- 新しい画面 → `pages/XxxPage.tsx` + 必要なら `components/<domain>/` + `app/routePages.ts` に
+  `lazy()` エントリ追加 + `app/router.tsx` にルート追加（画面はルート単位で遅延ロード。読み込み中は
+  `router.tsx` の `Suspense` 境界がスピナーを表示する）
 
 ### 方針（詳細は CLAUDE.md §3）
 

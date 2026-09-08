@@ -184,8 +184,9 @@ public class AuthController {
 | 未認証で保護 API | `ApiAuthenticationEntryPoint implements AuthenticationEntryPoint` | `401` + `ApiError.of("AUTH_REQUIRED", "認証が必要です。", traceId)` | ログ出力なし（頻出のため、requirements §10.5 は業務イベントのみ `INFO` 対象） |
 | ログアウト成功 | `ApiLogoutSuccessHandler implements LogoutSuccessHandler` | `204` | なし |
 
-- クライアント IP は `HttpServletRequest#getRemoteAddr()`（`X-Forwarded-For` は本番の ALB 経由時のみ
-  `server.forward-headers-strategy` 経由で反映、[01-architecture §1.3](../basic/01-architecture.md)）。
+- クライアント IP は `HttpServletRequest#getRemoteAddr()`（`X-Forwarded-For` は本番の前段 nginx
+  経由時のみ `server.forward-headers-strategy=framework` で反映、[01-architecture §1.4](../basic/01-architecture.md) /
+  [ADR 0005](../../adr/0005-deployment-ec2-single-instance.md)）。
 
 ## 6. 業務ルールの実装配置
 

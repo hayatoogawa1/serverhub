@@ -4,9 +4,15 @@
 # デプロイ構成・有効化手順は infra/aws/README.md。
 # DB 接続先・シークレットは環境変数で与える（このファイルには書かない）。
 
+spring:
+  flyway:
+    # 既定（db/migration）に加えて本番専用マイグレーション（db/prod）も適用する。
+    # db/prod はデモ管理者パスワードの変更など「公開環境だけで必要な差分」を置く。
+    locations: classpath:db/migration,classpath:db/prod
+
 server:
-  # TLS 終端は前段のリバースプロキシ（Caddy → frontend nginx）。
-  # X-Forwarded-Proto / X-Forwarded-For を信頼してスキーム・クライアント IP を復元する。
+  # TLS 終端は前段の nginx（EC2 上でホスト配信、/api を 127.0.0.1:8080 へプロキシ）。
+  # nginx が付ける X-Forwarded-Proto / X-Forwarded-For を信頼してスキーム・クライアント IP を復元する。
   # これにより request.isSecure() が true になり、CSRF Cookie の Secure 属性も正しく付く。
   forward-headers-strategy: framework
   servlet:

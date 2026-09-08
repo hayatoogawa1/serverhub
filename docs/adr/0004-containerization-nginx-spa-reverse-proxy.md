@@ -3,6 +3,10 @@
 - ステータス: Accepted（2026-09-08、Phase 8）
 - 関連: [01-architecture](../design/basic/01-architecture.md) §1 / [ADR 0003](0003-database-neon-with-local-docker-fallback.md)（DB）/
   [04-security](../design/basic/04-security.md)（CSP・同一オリジン）
+- 補足（Phase 10）: **本番デプロイはこの構成を土台にした非 Docker 版**（EC2 上に nginx を OS
+  パッケージで、backend jar を systemd で）に確定 → [ADR 0005](0005-deployment-ec2-single-instance.md)。
+  本 ADR のコンテナ構成はローカルのフルスタック確認・将来の基盤移行用に維持する（同一オリジン・
+  「nginx が SPA 配信、backend は静的配信しない」という判断は両方に共通）。
 
 ## 背景
 

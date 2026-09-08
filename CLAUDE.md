@@ -201,7 +201,11 @@ Phase 0 環境・ルール整備 → 1 要件定義 → 2 基本設計 → 3 詳
 
 **現在: Phase 10（レビュー・改善）進行中。** レビュー観点の棚卸しと優先度は
 [docs/design/phase10-review-backlog.md](docs/design/phase10-review-backlog.md)。
-Phase 8 はコンテナ化（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、#46）。
+本番デプロイ構成を確定（**EC2 1 台・非 Docker・nginx + systemd jar・DB は Neon 継続**）→
+[ADR 0005](docs/adr/0005-deployment-ec2-single-instance.md)。手順は
+[infra/aws/README.md §7](infra/aws/README.md)。
+Phase 8 はコンテナ化（[ADR 0004](docs/adr/0004-containerization-nginx-spa-reverse-proxy.md)、#46。本番は ADR 0005、
+コンテナ版はローカル/将来用途）。
 **Phase 9 = FR-CLOUD-01「AWS EC2 の実行状態を ServerHub 上で参照」**（設計
 [07-aws-ec2-integration](docs/design/basic/07-aws-ec2-integration.md)、PR #47 で確定、実装 #48〜#53）。
 不変条件（すべて遵守）: `servers.status` / `Status` enum を AWS 実行状態で上書きしない・別モデル別カラム
@@ -245,8 +249,8 @@ BE 89→134 / FE 123→148、いずれも既存不変。
 要件レベルの未決は [docs/requirements/open-issues.md](docs/requirements/open-issues.md) で管理。
 Phase 1 時点で残るのは後続フェーズ確定分のみ:
 
-- 開発 DB ポートの `127.0.0.1` バインド（S2 → Phase 10 PR-C）、セッションストア（S6）
-- Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → 要オーナー判断、[phase10 backlog](docs/design/phase10-review-backlog.md) #11）
+- 開発 DB ポートの `127.0.0.1` バインド（S2 → 確定 #58）、セッションストア（S6）
+- Neon ブランチ CI（N1 → 将来）、本番 DB は Neon か RDS（N2 → **確定: Neon 継続**、[ADR 0005](docs/adr/0005-deployment-ec2-single-instance.md)）
 
 ### 確定済み（履歴）
 

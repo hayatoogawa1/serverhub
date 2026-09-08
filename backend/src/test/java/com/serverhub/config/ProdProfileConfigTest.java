@@ -41,5 +41,18 @@ class ProdProfileConfigTest {
 
     // アプリログは INFO（既定 application.yml は DEBUG）
     assertThat(prod.getProperty("logging.level.com.serverhub")).isEqualTo("INFO");
+
+    // 本番専用マイグレーション（db/prod）も適用する
+    assertThat(prod.getProperty("spring.flyway.locations"))
+        .isEqualTo("classpath:db/migration,classpath:db/prod");
+  }
+
+  @Test
+  void prodOnlyMigrationExistsAndIsIsolatedFromSharedMigrations() {
+    // db/prod は prod プロファイルでのみ読まれる（既定 / CI は db/migration のみ）
+    assertThat(new ClassPathResource("db/prod/V100__update_admin_password.sql").exists()).isTrue();
+    // 共有マイグレーション側に V100 台を作らない（Flyway のバージョン衝突防止）
+    assertThat(new ClassPathResource("db/migration/V100__update_admin_password.sql").exists())
+        .isFalse();
   }
 }

@@ -11,6 +11,11 @@ Dockerfile      text eol=lf
 .dockerignore   text eol=lf
 *.conf          text eol=lf
 
-# 環境変数ファイル（docker compose が値に \r を含めてしまう）
+# Linux 上でそのまま使うデプロイ資材（CRLF だと systemd / nginx / SQL が壊れる）
+*.service       text eol=lf
+*.sql           text eol=lf
+
+# 環境変数ファイル（docker compose / systemd EnvironmentFile が値に \r を含めてしまう）
 .env            text eol=lf
 .env.*          text eol=lf
+*.env.example   text eol=lf

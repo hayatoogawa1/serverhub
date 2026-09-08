@@ -1,0 +1,86 @@
+name: Release
+
+# タグ push（v*）で backend jar とフロント dist をビルドし、GitHub Release に添付する。
+# デプロイはこのアーティファクトを infra/aws/deploy.sh が取得して行う（非 Docker / EC2）。
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "リリースタグ（例 v1.0.0）"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & publish artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Backend check + jar
+        working-directory: backend
+        # リリース対象が CI と同じ検証を通っていることを保証する（tag push は ci.yml の対象外）
+        run: ./gradlew --no-daemon check bootJar
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend check + build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm run test
+          npm run build
+
+      - name: Assemble artifacts
+        run: |
+          mkdir -p dist-artifacts
+          cp backend/build/libs/serverhub-backend-*.jar dist-artifacts/serverhub-backend.jar
+          tar -czf dist-artifacts/serverhub-frontend-dist.tar.gz -C frontend dist
+          cd dist-artifacts
+          sha256sum serverhub-backend.jar serverhub-frontend-dist.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: ${{ steps.tag.outputs.value }}
+          generate_release_notes: true
+          files: |
+            dist-artifacts/serverhub-backend.jar
+            dist-artifacts/serverhub-frontend-dist.tar.gz
+            dist-artifacts/SHA256SUMS

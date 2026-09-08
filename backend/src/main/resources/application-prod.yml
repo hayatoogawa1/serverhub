@@ -1,0 +1,29 @@
+# 本番プロファイル（起動時に SPRING_PROFILES_ACTIVE=prod で有効化）。
+#
+# ローカル開発・CI では有効化しない（既定プロファイルのまま）。
+# デプロイ構成・有効化手順は infra/aws/README.md。
+# DB 接続先・シークレットは環境変数で与える（このファイルには書かない）。
+
+server:
+  # TLS 終端は前段のリバースプロキシ（Caddy → frontend nginx）。
+  # X-Forwarded-Proto / X-Forwarded-For を信頼してスキーム・クライアント IP を復元する。
+  # これにより request.isSecure() が true になり、CSRF Cookie の Secure 属性も正しく付く。
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        # セッション Cookie は HTTPS のみ送出（requirements §10.1.3）
+        secure: true
+        http-only: true
+        same-site: lax
+
+serverhub:
+  security:
+    # 本番では Swagger UI / OpenAPI も認証必須（基本設計 04-security D-SEC-02）
+    swagger-permit-all: false
+
+logging:
+  level:
+    # 既定（application.yml）の com.serverhub=DEBUG を本番では INFO に抑制（requirements §12.6）
+    root: INFO
+    com.serverhub: INFO

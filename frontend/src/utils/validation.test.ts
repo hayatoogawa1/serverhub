@@ -41,6 +41,25 @@ describe('hostname', () => {
   it('空は任意扱い（undefined）', () => {
     expect(hostname('')).toBeUndefined()
   })
+
+  it('使えない文字を名指しで指摘する', () => {
+    expect(hostname('web_01')).toContain('「_」')
+    expect(hostname('web@01')).toContain('「@」')
+    expect(hostname('web 01')).toContain('スペース')
+  })
+  it('先頭・末尾のハイフン/ドットを指摘する', () => {
+    expect(hostname('-web')).toContain('先頭・末尾')
+    expect(hostname('web.')).toContain('先頭・末尾')
+  })
+  it('連続ドットを指摘する', () => {
+    expect(hostname('web..a')).toContain('連続')
+  })
+  it('ラベル長超過を指摘する', () => {
+    expect(hostname(`${'a'.repeat(64)}.example`)).toContain('63 文字以内')
+  })
+  it('どのメッセージにも入力例を含める', () => {
+    expect(hostname('web_01')).toContain('web-prod-01')
+  })
 })
 
 describe('ipAddress', () => {
@@ -53,5 +72,17 @@ describe('ipAddress', () => {
   it('空は任意扱い（undefined）', () => {
     expect(ipAddress('')).toBeUndefined()
     expect(ipAddress(null)).toBeUndefined()
+  })
+
+  it('オクテット数の過不足を指摘する', () => {
+    expect(ipAddress('10.0.0')).toContain('現在 3 組')
+    expect(ipAddress('10.0.0.1.1')).toContain('現在 5 組')
+  })
+  it('範囲外のオクテットを名指しで指摘する', () => {
+    expect(ipAddress('999.1.1.1')).toContain('「999」')
+    expect(ipAddress('192.168.1.300')).toContain('「300」')
+  })
+  it('コロンを含む入力は IPv6 として扱う', () => {
+    expect(ipAddress('2001:db8:::1')).toContain('IPv6')
   })
 })

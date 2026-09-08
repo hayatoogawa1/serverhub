@@ -197,9 +197,12 @@ export function ServerFormModal({
               value={values.hostname}
               onChange={(e) => set('hostname', e.target.value)}
               error={Boolean(fieldError('hostname'))}
-              helperText={fieldError('hostname')}
+              helperText={
+                fieldError('hostname') ?? '英数字・ハイフン(-)・ドット(.)のみ（例: web-prod-01）'
+              }
               disabled={submitting}
               slotProps={{ htmlInput: { maxLength: SERVER_FIELD_LIMITS.hostname } }}
+              placeholder="web-prod-01"
               fullWidth
               autoFocus
             />
@@ -208,8 +211,11 @@ export function ServerFormModal({
               value={values.ipAddress}
               onChange={(e) => set('ipAddress', e.target.value)}
               error={Boolean(fieldError('ipAddress'))}
-              helperText={fieldError('ipAddress') ?? 'IPv4 / IPv6（任意）'}
+              helperText={
+                fieldError('ipAddress') ?? 'IPv4 / IPv6（任意）。例: 192.168.1.10 / 2001:db8::1'
+              }
               disabled={submitting}
+              placeholder="192.168.1.10"
               fullWidth
             />
             <TextField

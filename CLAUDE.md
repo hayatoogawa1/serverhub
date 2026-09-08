@@ -313,6 +313,10 @@ Phase 1 時点で残るのは後続フェーズ確定分のみ:
   - **9-6 完了**: `infra/aws/iam-policy-serverhub-ec2-readonly.json`（`ec2:DescribeInstances` + region 条件のみ）+
     `infra/aws/README.md`（IAM ロール作成・アタッチ・有効化手順・障害時挙動）。`application.yml` の
     `poll-interval` / `staleness-threshold` も環境変数化。README / .env.example / 07 §8 を同期。コード動作は不変（既定 OFF）
+  - **fix（#54）**: SSO（IAM Identity Center）プロファイルを解決できるよう AWS SDK の `sso`/`ssooidc` を追加。
+    `CloudStartupLogger` が起動時に `cloud integration: enabled=…, provider=…` を INFO 出力（設定ミス切り分け用）。
+    `CloudLinkPanel` が `lastError` の実メッセージを表示。`infra/aws/README.md` に SSO ローカル手順・起動方法
+    （Gradle デーモン対策の `--no-daemon`）・ログ確認を追記
   不変条件（全 PR で遵守）: `servers.status`/`Status` enum を変更しない・AWS 書き込み API 禁止・IAM は
   `ec2:DescribeInstances` のみ・静的キー非保存・ローカル/CI は `enabled=false`・AWS 障害時も台帳画面は動く・
   FE から AWS を直接呼ばない・既存テスト（BE / FE）を壊さない

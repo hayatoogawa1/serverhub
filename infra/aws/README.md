@@ -52,13 +52,74 @@ ServerHub の「AWS 連携」機能（FR-CLOUD-01、設計 [07-aws-ec2-integrati
 | 環境 | 方法 |
 |---|---|
 | **本番**（Phase 9 の AWS デプロイ） | **IAM ロール**を計算リソースにアタッチ（ECS タスクロール / EC2 インスタンスプロファイル）。AWS SDK 既定のクレデンシャルチェーンが自動取得する。**静的アクセスキーは使わない** |
-| ローカルで実 AWS を試す開発者 | `SERVERHUB_CLOUD_ENABLED=true` + `AWS_PROFILE` など SDK 標準の方法（`~/.aws/credentials`）。キーはリポジトリ・`.env`（コミット対象）に置かない |
-| CI / 自動テスト | `enabled=false`（既定）。フェイク／Disabled provider。AWS を呼ばない |
+| **ローカルで実 AWS を試す** | **IAM Identity Center（SSO）プロファイル**が推奨（§3.2）。または `AWS_PROFILE` で名前付きプロファイル。静的キーの直貼りはしない |
+| CI / 自動テスト | `enabled=false`（既定）。Disabled provider。AWS を呼ばない |
 
 - ServerHub は AWS のアクセスキー・シークレットを **DB にもソースにも保存しない**（`BR-11` / requirements §10.1.9）。
 - `DescribeInstances` のレスポンスのうち ServerHub が保存するのは **`state` / `state_raw` のみ**（最小取得）。
+- SDK は `sso` / `ssooidc` モジュールを同梱済み（`build.gradle.kts`）。SSO プロファイルをそのまま解決できる。
 
-### 3.1 IAM ロール作成の手順（例: マネジメントコンソール）
+### 3.2 IAM Identity Center（SSO）をローカルで使う
+
+```bash
+# 1) 一度だけ: SSO プロファイルを作る
+aws configure sso
+#   SSO start URL / SSO Region を入力 → 許可するアカウント・権限セット（ServerHubEc2ReadOnly）を選択
+#   CLI profile name は例えば  serverhub-read-only  にする
+
+# 2) セッションを開始（期限切れのたびに実行。ブラウザで承認）
+aws sso login --profile serverhub-read-only
+
+# 3) 対象インスタンスがこのプロファイルで“見える”ことを確認（重要）
+aws ec2 describe-instances \
+  --profile serverhub-read-only --region ap-northeast-1 \
+  --instance-ids i-xxxxxxxxxxxxxxxxx \
+  --query "Reservations[].Instances[].[InstanceId,State.Name]" --output table
+```
+
+> `describe-instances` が `Reservations: []` や `InvalidInstanceID.NotFound` を返すなら、その
+> インスタンスは **この SSO プロファイルのアカウント / リージョンに居ない**。ServerHub も同じ結果になる
+> （= 「見つかりません（gone）」になる）。まず CLI で見えるようにする。
+
+### 3.3 Backend の起動（ローカル）
+
+`AWS_PROFILE` は **Backend を起動する JVM に届いている**必要がある。Gradle デーモンが古い環境を
+保持していることがあるので、確実なのは次のいずれか:
+
+```bash
+# 方式A: jar を直接起動（デーモンの影響を受けない・おすすめ）
+cd backend && ./gradlew --no-daemon bootJar
+SERVERHUB_CLOUD_ENABLED=true \
+AWS_PROFILE=serverhub-read-only \
+AWS_REGION=ap-northeast-1 \
+java -jar build/libs/*.jar
+
+# 方式B: bootRun を no-daemon で（同じシェルで env をセット）
+cd backend && SERVERHUB_CLOUD_ENABLED=true AWS_PROFILE=serverhub-read-only AWS_REGION=ap-northeast-1 \
+  ./gradlew --no-daemon bootRun
+
+# 方式C: make be-run（リポジトリルートの .env を読む）
+#   .env に SERVERHUB_CLOUD_ENABLED=true / AWS_PROFILE=serverhub-read-only / AWS_REGION=ap-northeast-1 を書く
+#   ※ .env は git 管理外。ただしプロファイル名だけなので機密ではない
+make be-run
+```
+
+### 3.4 効いているかの確認（ログ）
+
+起動直後の INFO ログに 1 行出る:
+
+```
+cloud integration: enabled=true, provider=Ec2CloudStateProviderImpl, region=ap-northeast-1, pollInterval=PT5M, ...
+```
+
+- `enabled=false` または `provider=DisabledCloudStateProviderImpl` → **環境変数が JVM に届いていない**。
+  → §3.3 の方式A / B（`--no-daemon`）で起動し直す。`refresh` は 503 `CLOUD_PROVIDER_UNAVAILABLE` になる。
+- `provider=Ec2CloudStateProviderImpl` なのに実行状態が出ない → AWS 呼び出し自体は行っている。
+  画面「AWS 連携」の「最新の取得に失敗しました: …」に理由が出る（`refresh` は 200 で返る）。
+  よくある理由: `aws sso login` の期限切れ / プロファイル名違い / インスタンスが別アカウント・別リージョン。
+  Backend ログにも `Ec2CloudStateProviderImpl` / `CloudStatePoller` の WARN が出る。
+
+### 3.5 IAM ロール作成の手順（本番デプロイ時・例: マネジメントコンソール）
 
 1. IAM → ポリシー → 「ポリシーを作成」→ JSON に本ディレクトリの `iam-policy-serverhub-ec2-readonly.json` を貼り付け →
    名前 `serverhub-ec2-readonly`。
@@ -92,7 +153,7 @@ CDK / Terraform で管理する場合も同じポリシー JSON をそのまま�
 
 ## 5. 有効化の手順（本番）
 
-1. §3.1 で IAM ロールを作成し、ServerHub の計算リソースにアタッチする。
+1. §3.5 で IAM ロールを作成し、ServerHub の計算リソースにアタッチする。
 2. デプロイ環境に `SERVERHUB_CLOUD_ENABLED=true`（必要なら `SERVERHUB_CLOUD_AWS_REGION`）を設定する。
 3. Backend を再デプロイ / 再起動する。
 4. ServerHub の各サーバー詳細画面「AWS 連携」で EC2 インスタンス ID を登録する。

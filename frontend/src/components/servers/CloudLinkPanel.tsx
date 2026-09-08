@@ -152,8 +152,9 @@ export function CloudLinkPanel({ serverId, serverHostname, cloudLink }: CloudLin
               {fetchedAt ? `最終取得: ${formatDateTime(fetchedAt)}` : 'まだ取得していません'}
             </Typography>
             {cloudLink.lastError && (
-              <Typography variant="caption" color="error">
-                最新の取得に失敗しました（上記は前回取得時点の状態です）。
+              <Typography variant="caption" color="error" sx={{ wordBreak: 'break-word' }}>
+                最新の取得に失敗しました（表示は{fetchedAt ? '前回取得時点' : '未取得'}の状態）:{' '}
+                {cloudLink.lastError}
               </Typography>
             )}
             <Typography variant="caption" color="text.secondary">

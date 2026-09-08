@@ -41,7 +41,9 @@ describe('ServerFormModal (create)', () => {
     await typeInto(user, 'ホスト名 *', 'bad_host')
     await user.click(screen.getByRole('button', { name: '台帳に登録' }))
 
-    expect(await screen.findByText('ホスト名の形式が正しくありません。')).toBeInTheDocument()
+    expect(
+      await screen.findByText(/ホスト名に使えない文字 「_」 が含まれています/),
+    ).toBeInTheDocument()
   })
 
   it('IP 形式エラーを検出する', async () => {
@@ -53,7 +55,9 @@ describe('ServerFormModal (create)', () => {
     await typeInto(user, 'IP アドレス', '999.1.1.1')
     await user.click(screen.getByRole('button', { name: '台帳に登録' }))
 
-    expect(await screen.findByText('IP アドレスの形式が正しくありません。')).toBeInTheDocument()
+    expect(
+      await screen.findByText(/IPv4 の各組は 0〜255 の数字です（「999」が 0〜255 の範囲外です）/),
+    ).toBeInTheDocument()
   })
 
   it('登録成功で onCreated を呼ぶ（body は環境/ステータスを含む）', async () => {

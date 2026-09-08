@@ -1,6 +1,7 @@
 package com.serverhub.server;
 
 import com.serverhub.cloud.CloudLinkReader;
+import com.serverhub.cloud.CloudLinkResponse;
 import com.serverhub.cloud.ServerCloudLink;
 import com.serverhub.common.error.ResourceNotFoundException;
 import com.serverhub.common.page.PageRequest;
@@ -242,7 +243,7 @@ public class ServerServiceImpl implements ServerService {
   }
 
   private static ServerDetailResponse toDetail(
-      Server s, List<String> tags, com.serverhub.cloud.CloudLinkResponse cloudLink) {
+      Server s, List<String> tags, CloudLinkResponse cloudLink) {
     return new ServerDetailResponse(
         s.id(),
         s.hostname(),

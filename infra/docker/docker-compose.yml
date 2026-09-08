@@ -23,8 +23,10 @@ services:
       TZ: Asia/Tokyo
       LANG: C.UTF-8
     ports:
-      # ローカルに既存の PostgreSQL がある場合は .env の DB_PORT で回避する
-      - "${DB_PORT:-5432}:5432"
+      # ループバックのみに公開する（open-issues S2 / requirements §10.1.15）。
+      # 開発 DB を LAN やコンテナ外へ晒さない。ローカルに既存の PostgreSQL がある場合は
+      # .env の DB_PORT でホスト側ポートだけ変更する。
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       # 初回起動時のみ実行される初期化スクリプト。スキーマは Flyway が管理する。

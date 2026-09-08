@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -31,6 +31,7 @@ import {
   validateServerForm,
   type ServerFieldErrors,
 } from '@/validation/server'
+import { focusFirstInvalid } from '@/utils/a11y'
 import type { ServerDetail, ServerFormValues } from '@/types/server'
 
 interface ServerFormModalProps {
@@ -101,6 +102,12 @@ export function ServerFormModal({
     mode === 'edit' && server ? toFormValues(server) : EMPTY_VALUES,
   )
   const [clientErrors, setClientErrors] = useState<ServerFieldErrors>({})
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // バリデーション失敗時、最初の不正フィールドへフォーカスを移す（a11y、Phase 10 #6）
+  useEffect(() => {
+    if (hasServerFieldErrors(clientErrors)) focusFirstInvalid(formRef.current)
+  }, [clientErrors])
 
   const createMutation = useCreateServerMutation()
   const updateMutation = useUpdateServerMutation(server?.id ?? 0)
@@ -179,7 +186,7 @@ export function ServerFormModal({
           </>
         }
       >
-        <Box component="form" id="server-form" onSubmit={handleSubmit} noValidate>
+        <Box component="form" id="server-form" ref={formRef} onSubmit={handleSubmit} noValidate>
           {topError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {topError}

@@ -58,6 +58,8 @@ describe('ServerFormModal (create)', () => {
     expect(
       await screen.findByText(/IPv4 の各組は 0〜255 の数字です（「999」が 0〜255 の範囲外です）/),
     ).toBeInTheDocument()
+    // a11y: ホスト名は有効なので、フォーカスは最初の不正フィールド（IP アドレス）へ移る
+    await waitFor(() => expect(screen.getByLabelText('IP アドレス')).toHaveFocus())
   })
 
   it('登録成功で onCreated を呼ぶ（body は環境/ステータスを含む）', async () => {

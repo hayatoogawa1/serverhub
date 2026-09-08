@@ -30,17 +30,17 @@ Phase 1〜9（MVP + コンテナ化 + AWS EC2 実行状態の参照）完了後�
 
 | # | 項目 | 根拠 | 工数 | 状態 |
 |---|---|---|---|---|
-| 4 | Frontend のルート単位コード分割（`React.lazy` + vite `manualChunks`） | `npm run build` が「chunk > 500KB」警告。`index.js` 1.16MB（gzip 358KB）。`router.tsx` が全ページ eager import。特に Dashboard の `recharts` が重い | M | 未着手（PR-B） |
+| 4 | Frontend のルート単位コード分割（`React.lazy` + vite `manualChunks`） | `npm run build` が「chunk > 500KB」警告。`index.js` 1.16MB（gzip 358KB）。`router.tsx` が全ページ eager import。特に Dashboard の `recharts` が重い | M | **完了（#57）**。初期 JS gzip 358KB→約240KB、`recharts` は Dashboard ルートのみ、`react`/`mui` を安定チャンク化、500KB 警告解消 |
 | 5 | 本番 Spring プロファイル（`application-prod.yml`）の追加 | 不在。`logging.level.com.serverhub: DEBUG` が既定のまま。セッション Cookie `secure`、Swagger 認証必須（`serverhub.security.swagger-permit-all=false`）も本番向けに束ねたい | M | 見送り（オーナー指示、今回はスコープ外） |
-| 6 | アクセシビリティ点検 | フォームのバリデーション失敗時に最初のエラー項目へフォーカス移動が無い。トーストの `aria-live`、キーボード操作、コントラスト | M | 未着手（PR-D） |
-| 7 | dev DB ポートを `127.0.0.1` バインドに限定 | `infra/docker/docker-compose.yml` が `${DB_PORT:-5432}:5432`（全 IF 公開）。open-issues S2 の推奨は `127.0.0.1:${DB_PORT}:5432` | XS | 未着手（PR-C） |
-| 8 | テストカバレッジの穴の棚卸し | `vite.config.ts` に v8 カバレッジ設定済みだが未計測。異常系・境界値の抜けを洗い出す | S〜M | 未着手（PR-D） |
+| 6 | アクセシビリティ点検 | フォームのバリデーション失敗時に最初のエラー項目へフォーカス移動が無い。トーストの `aria-live`、キーボード操作、コントラスト | M | **完了（PR-D）**。`utils/a11y.ts` の `focusFirstInvalid` を 4 フォーム（Server / Maintenance / CloudLink / Login）に導入。トーストは error→`role="alert"` / success・info→`role="status"`。MUI Dialog のフォーカストラップ・`aria-modal`・`aria-describedby`（エラー文言）は既存で担保済み。コントラスト・キーボード全項目監査は視覚ツールが必要なため別途 |
+| 7 | dev DB ポートを `127.0.0.1` バインドに限定 | `infra/docker/docker-compose.yml` が `${DB_PORT:-5432}:5432`（全 IF 公開）。open-issues S2 の推奨は `127.0.0.1:${DB_PORT}:5432` | XS | **完了（PR-D と同時／#58）**。`127.0.0.1:${DB_PORT:-5432}:5432` に変更、S2 を確定に |
+| 8 | テストカバレッジの穴の棚卸し | `vite.config.ts` に v8 カバレッジ設定済みだが未計測。異常系・境界値の抜けを洗い出す | S〜M | **完了（PR-D）**。FE カバレッジは stmts 86.9% / branch 85.8%（BE 142 テスト）。低い残りは起動配線（`main.tsx` / `App.tsx` / `routePages.ts` → coverage 除外に追加）と単純ラッパー（`CopyButton` / `TagInput` 40%台）のみで、重大な穴なし。ビジネスロジック（`validation` 96% / `hooks` 96% / `url` 93%）は十分 |
 
 ## P3
 
 | # | 項目 | 根拠 | 区分 | 状態 |
 |---|---|---|---|---|
-| 9 | `ServerServiceImpl.toDetail` の `com.serverhub.cloud.CloudLinkResponse` FQCN 直書きを import に統一 | `ServerServiceImpl.java` | 軽微リファクタ | 未着手（PR-C） |
+| 9 | `ServerServiceImpl.toDetail` の `com.serverhub.cloud.CloudLinkResponse` FQCN 直書きを import に統一 | `ServerServiceImpl.java` | 軽微リファクタ | **完了（#58）** |
 | 10 | ダッシュボードの「AWS 実行状態」集計・「要確認」パネル | `07-aws-ec2-integration §3`「Phase 10 で検討」 | 要スコープ判断（MVP 拡張） | 保留 |
 | 11 | 本番 DB を Neon 継続か AWS RDS か | open-issues N2「Phase 9 で判断」だが未決 | 要オーナー判断 | 保留 |
 | 12 | ServerHub 自体の AWS 実デプロイ（ECS/EC2 プロビジョニング・IaC・本番稼働） | Phase 9 は「EC2 状態の参照機能」のみ。デプロイ基盤は未着手 | 別フェーズ・要承認（コスト発生） | 保留 |
@@ -52,9 +52,18 @@ Phase 1〜9（MVP + コンテナ化 + AWS EC2 実行状態の参照）完了後�
 
 | PR | 含む項目 | 概要 |
 |---|---|---|
-| **PR-A** | #1, #2, #3, 本バックログ | 確定仕様のズレ修正 + ドキュメント整合。低リスク |
-| **PR-B** | #4 | Frontend コード分割（体感効果大） |
-| **PR-C** | #7, #9 | docker-compose ポートバインド + 軽微リファクタ（#5 本番プロファイルはオーナー指示で今回スコープ外） |
+| **PR-A**（#56 マージ済） | #1, #2, #3, 本バックログ | 確定仕様のズレ修正 + ドキュメント整合。低リスク |
+| **PR-B**（#57 マージ済） | #4 | Frontend コード分割（体感効果大） |
+| **PR-C**（#58） | #7, #9 | docker-compose ポートバインド + 軽微リファクタ（#5 本番プロファイルはオーナー指示で今回スコープ外） |
 | **PR-D** | #6, #8 | アクセシビリティ改善 + テストカバレッジ棚卸し |
 
-#10〜#13 は着手前に方針確認。
+#5 / #10〜#13 は着手前に方針確認（#5 は本番デプロイ着手時、#11・#12 とセットで判断するのが自然）。
+
+## 残タスク（今バッチ後）
+
+- #5 本番 Spring プロファイル（`application-prod.yml`）
+- #10 ダッシュボードの AWS 状態集計パネル（MVP 拡張の可否）
+- #11 本番 DB を Neon 継続か RDS か（N2）
+- #12 ServerHub 自体の AWS 実デプロイ（IaC・本番稼働）
+- #13 実サーバー連携（E1、別フェーズ）
+- a11y の追加監査（コントラスト比・キーボード操作の全画面チェック）、`CopyButton` / `TagInput` の単体テスト追加

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -14,6 +14,7 @@ import {
   type CloudLinkFieldErrors,
 } from '@/validation/cloudLink'
 import { CLOUD_PROVIDER_LABELS, type CloudLink, type CloudLinkFormValues } from '@/types/cloud'
+import { focusFirstInvalid } from '@/utils/a11y'
 
 interface CloudLinkFormModalProps {
   serverId: number
@@ -44,6 +45,13 @@ export function CloudLinkFormModal({
     region: current?.region ?? DEFAULT_REGION,
   })
   const [clientErrors, setClientErrors] = useState<CloudLinkFieldErrors>({})
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // バリデーション失敗時、最初の不正フィールドへフォーカスを移す（a11y、Phase 10 #6）
+  useEffect(() => {
+    if (hasCloudLinkFieldErrors(clientErrors)) focusFirstInvalid(formRef.current)
+  }, [clientErrors])
+
   const mutation = useSetCloudLinkMutation(serverId)
   const submitting = mutation.isPending
   const error = mutation.error
@@ -96,7 +104,7 @@ export function CloudLinkFormModal({
         </>
       }
     >
-      <Box component="form" id="cloud-link-form" onSubmit={handleSubmit} noValidate>
+      <Box component="form" id="cloud-link-form" ref={formRef} onSubmit={handleSubmit} noValidate>
         {topError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {topError}

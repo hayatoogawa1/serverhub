@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import { email as validateEmail, required } from '@/utils/validation'
+import { focusFirstInvalid } from '@/utils/a11y'
 import { useLoginMutation } from '@/hooks/auth'
 
 interface LoginFormProps {
@@ -20,7 +21,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [clientErrors, setClientErrors] = useState<{ email?: string; password?: string }>({})
+  const formRef = useRef<HTMLFormElement>(null)
   const login = useLoginMutation()
+
+  // バリデーション失敗時、最初の不正フィールドへフォーカスを移す（a11y、Phase 10 #6）
+  useEffect(() => {
+    if (clientErrors.email ?? clientErrors.password) focusFirstInvalid(formRef.current)
+  }, [clientErrors])
 
   const serverFieldErrors = login.error?.fieldErrorMap() ?? {}
   // フィールド単位のエラーが無いもの（401 資格情報不正・500・形式不明の 400）は上部に表示
@@ -39,7 +46,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate>
+    <Box component="form" ref={formRef} onSubmit={handleSubmit} noValidate>
       <Stack spacing={2.5}>
         {topError && <Alert severity="error">{topError}</Alert>}
         <TextField

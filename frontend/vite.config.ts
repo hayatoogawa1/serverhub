@@ -47,7 +47,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/mocks/**'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test/**',
+        'src/mocks/**',
+        // 起動配線・宣言のみ（ロジックを持たない。E2E 相当でしか通らない）
+        'src/main.tsx',
+        'src/app/App.tsx',
+        'src/app/routePages.ts',
+        'src/**/*.d.ts',
+      ],
     },
   },
 })

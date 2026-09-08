@@ -24,6 +24,18 @@ describe('LoginForm', () => {
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
+  it('a11y: 送信時に最初の不正フィールドへフォーカスを移す', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<LoginForm onSuccess={onSuccess} />)
+
+    // メールは有効・パスワードだけ未入力 → フォーカスはパスワードへ移る
+    await user.type(screen.getByLabelText('メールアドレス'), 'admin@serverhub.local')
+    await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+    await screen.findByText('パスワードは必須です。')
+    await waitFor(() => expect(screen.getByLabelText('パスワード')).toHaveFocus())
+  })
+
   it('資格情報が不正なら共通メッセージを上部に表示する', async () => {
     server.use(loginHandler('bad-credentials'))
     const user = userEvent.setup()

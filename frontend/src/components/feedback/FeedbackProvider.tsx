@@ -50,7 +50,14 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert severity={state.severity} variant="filled" onClose={close} sx={{ width: '100%' }}>
+        <Alert
+          severity={state.severity}
+          // エラーは即時読み上げ（assertive）、成功・情報は穏やかに（polite）。a11y、Phase 10 #6
+          role={state.severity === 'error' ? 'alert' : 'status'}
+          variant="filled"
+          onClose={close}
+          sx={{ width: '100%' }}
+        >
           {state.message}
         </Alert>
       </Snackbar>

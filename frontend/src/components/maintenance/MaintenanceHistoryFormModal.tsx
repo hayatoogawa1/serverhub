@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -25,6 +25,7 @@ import {
   type MaintenanceFormValues,
   type MaintenanceHistoryDetail,
 } from '@/types/maintenance'
+import { focusFirstInvalid } from '@/utils/a11y'
 
 interface MaintenanceHistoryFormModalProps {
   /** サーバー詳細から起動した場合は固定・変更不可。 */
@@ -56,6 +57,13 @@ export function MaintenanceHistoryFormModal({
 }: MaintenanceHistoryFormModalProps) {
   const [values, setValues] = useState<MaintenanceFormValues>(emptyValues(fixedServerId))
   const [clientErrors, setClientErrors] = useState<MaintenanceFieldErrors>({})
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // バリデーション失敗時、最初の不正フィールドへフォーカスを移す（a11y、Phase 10 #6）
+  useEffect(() => {
+    if (hasMaintenanceFieldErrors(clientErrors)) focusFirstInvalid(formRef.current)
+  }, [clientErrors])
+
   const mutation = useCreateMaintenanceHistoryMutation()
   const submitting = mutation.isPending
   const error = mutation.error
@@ -105,7 +113,7 @@ export function MaintenanceHistoryFormModal({
         </>
       }
     >
-      <Box component="form" id="maintenance-form" onSubmit={handleSubmit} noValidate>
+      <Box component="form" id="maintenance-form" ref={formRef} onSubmit={handleSubmit} noValidate>
         {topError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {topError}

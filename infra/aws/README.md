@@ -145,6 +145,7 @@ CDK / Terraform で管理する場合も同じポリシー JSON をそのまま�
 | `SERVERHUB_CLOUD_AWS_REGION` | `ap-northeast-1` | 問い合わせるリージョン。IAM ポリシーの `aws:RequestedRegion` と合わせる |
 | `SERVERHUB_CLOUD_POLL_INTERVAL` | `PT5M` | ポーリング間隔（ISO-8601 Duration） |
 | `SERVERHUB_CLOUD_STALENESS_THRESHOLD` | `PT15M` | これを超えて未取得なら UI で「情報が古い可能性」を表示 |
+| `SPRING_PROFILES_ACTIVE` | （未設定） | 本番デプロイでは `prod` を設定。`application-prod.yml` が Secure Cookie・`forward-headers-strategy`（前段プロキシの `X-Forwarded-*` 信頼）・Swagger 認証必須・`com.serverhub` ログを INFO に切り替える |
 
 > `SERVERHUB_CLOUD_POLL_INTERVAL` / `SERVERHUB_CLOUD_STALENESS_THRESHOLD` は
 > `serverhub.cloud.poll-interval` / `serverhub.cloud.staleness-threshold` に対応（Spring のリラックスバインディング）。

@@ -48,6 +48,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # 本番デプロイでは .env に SPRING_PROFILES_ACTIVE=prod を設定する
+      # （application-prod.yml: Secure Cookie / forward-headers / Swagger 認証必須 / INFO ログ）。
+      # 開発フルスタックでは未設定のまま（既定プロファイル）。
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
       # 本番寄りにログを抑える場合の例（既定は application.yml の DEBUG）
       LOGGING_LEVEL_COM_SERVERHUB: ${LOGGING_LEVEL_COM_SERVERHUB:-INFO}
       JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0}

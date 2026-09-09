@@ -197,6 +197,11 @@ requirements §10.1.6 のとおり Controller の Bean Validation（`@Valid`）�
 - **監査列（`created_at`/`updated_at`）**: Doma の `EntityListener` で自動設定する方針とし、
   Service 層で個別に代入するコードを機能ごとに書かない（[03-data-model §4.8](../basic/03-data-model.md) の
   「方針、詳細は Phase 3/5」を受けて確定）。リスナーの実クラスは Phase 5。
+  - **タイムゾーン（Phase 10 で確定）**: DB は `TIMESTAMPTZ`。Doma 3.11 は `OffsetDateTime` を永続型として
+    扱えない（`DOMA4096`）ため、エンティティ / DAO は `LocalDateTime`（JVM 既定ゾーンの壁時計）のまま。
+    **API レスポンスへ出すときだけ `common.time.Timestamps#toOffset` でオフセットを付与**（D-API-05）。
+    変換は 1 箇所に集約。本番 EC2 は systemd unit で `TZ=Asia/Tokyo` を明示（ログ可読性のため。
+    表示の正しさは `atZone(systemDefault())` によるインスタント復元で担保しており TZ 設定に非依存）。
 - **楽観ロック**: `@Version`（`servers.version`）。[05-cross-cutting §1.2](../basic/05-cross-cutting.md) のとおり、
   Doma が自動的に `OptimisticLockException` を投げる前提を維持する。
 

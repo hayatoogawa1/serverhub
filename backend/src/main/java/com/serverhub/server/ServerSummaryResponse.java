@@ -1,7 +1,7 @@
 package com.serverhub.server;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -17,6 +17,6 @@ public record ServerSummaryResponse(
     Environment environment,
     Status status,
     List<String> tags,
-    LocalDateTime updatedAt,
+    OffsetDateTime updatedAt,
     String cloudState,
-    LocalDateTime cloudStateFetchedAt) {}
+    OffsetDateTime cloudStateFetchedAt) {}

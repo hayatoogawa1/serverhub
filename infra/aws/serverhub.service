@@ -16,6 +16,9 @@ Type=simple
 User=serverhub
 Group=serverhub
 
+# AL2023 の既定は UTC。ログとローカル日時計算を JST に固定する
+# （API の日時はオフセット付きで返るので表示の正しさには非依存。可読性のため）。
+Environment=TZ=Asia/Tokyo
 EnvironmentFile=/etc/serverhub/serverhub.env
 WorkingDirectory=/opt/serverhub
 ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/serverhub/serverhub-backend.jar

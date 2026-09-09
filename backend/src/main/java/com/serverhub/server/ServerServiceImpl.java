@@ -7,6 +7,7 @@ import com.serverhub.common.error.ResourceNotFoundException;
 import com.serverhub.common.page.PageRequest;
 import com.serverhub.common.page.PageResponse;
 import com.serverhub.common.page.SortDirection;
+import com.serverhub.common.time.Timestamps;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -88,9 +89,9 @@ public class ServerServiceImpl implements ServerService {
                       s.environment(),
                       s.status(),
                       tagsByServer.getOrDefault(s.id(), List.of()),
-                      s.updatedAt(),
+                      Timestamps.toOffset(s.updatedAt()),
                       (link == null || link.state() == null) ? null : link.state().value(),
-                      link == null ? null : link.stateFetchedAt());
+                      link == null ? null : Timestamps.toOffset(link.stateFetchedAt()));
                 })
             .toList();
 
@@ -258,8 +259,8 @@ public class ServerServiceImpl implements ServerService {
         s.owner(),
         tags,
         s.version(),
-        s.createdAt(),
-        s.updatedAt(),
+        Timestamps.toOffset(s.createdAt()),
+        Timestamps.toOffset(s.updatedAt()),
         cloudLink);
   }
 }

@@ -1,7 +1,8 @@
 package com.serverhub.maintenance;
 
+import com.serverhub.common.time.Timestamps;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * サーバー詳細内の履歴・登録直後（POST の 201 応答）のレスポンス（詳細設計 04-maintenance §3.2、D-MNT-01）。
@@ -16,7 +17,7 @@ public record MaintenanceHistoryDetailResponse(
     String content,
     String impact,
     String result,
-    LocalDateTime createdAt) {
+    OffsetDateTime createdAt) {
 
   static MaintenanceHistoryDetailResponse from(MaintenanceHistory history) {
     return new MaintenanceHistoryDetailResponse(
@@ -27,6 +28,6 @@ public record MaintenanceHistoryDetailResponse(
         history.content(),
         history.impact(),
         history.result(),
-        history.createdAt());
+        Timestamps.toOffset(history.createdAt()));
   }
 }

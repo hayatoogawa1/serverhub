@@ -213,6 +213,7 @@ Phase 8 はコンテナ化（[ADR 0004](docs/adr/0004-containerization-nginx-spa
 キャッシュ + `lastError` を表示・EC2 の操作 API は実装しない・IAM は `ec2:DescribeInstances` のみ・
 静的キー非保存・ローカル/CI は `enabled=false`・既存 MVP と既存テストを壊さない。
 BE 89→134 / FE 123→148、いずれも既存不変。
+Phase 10 で一覧からの一括更新（`POST /servers/cloud-links/refresh`、`CloudStateRefresher` をポーラーと共用）を追加。
 
 ---
 

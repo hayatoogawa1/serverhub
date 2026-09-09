@@ -86,8 +86,15 @@ interface ServerHandlerOptions {
   updateOutcome?: MutationOutcome
   /** DELETE /servers/:id の結果。 */
   deleteOutcome?: 'success' | 'not-found' | 'error'
+  /** POST /servers/cloud-links/refresh の結果。 */
+  bulkCloudRefreshOutcome?: 'success' | 'partial-failure' | 'provider-unavailable'
   /** POST / DELETE の呼び出しを記録する（テストで検証）。 */
-  spy?: { create?: unknown; update?: unknown; deleteCalled?: boolean }
+  spy?: {
+    create?: unknown
+    update?: unknown
+    deleteCalled?: boolean
+    bulkCloudRefreshCalled?: boolean
+  }
 }
 
 function mutationError(outcome: Exclude<MutationOutcome, 'success'>) {
@@ -135,6 +142,24 @@ export function serverHandlers(opts: ServerHandlerOptions = {}) {
   const histories = opts.histories ?? maintenanceHistoriesFixture
 
   return [
+    http.post(`${API}/servers/cloud-links/refresh`, () => {
+      if (opts.spy) opts.spy.bulkCloudRefreshCalled = true
+      switch (opts.bulkCloudRefreshOutcome) {
+        case 'provider-unavailable':
+          return HttpResponse.json(
+            {
+              code: 'CLOUD_PROVIDER_UNAVAILABLE',
+              message: 'クラウド連携が利用できません。時間をおいて再度お試しください。',
+              traceId: 't',
+            },
+            { status: 503 },
+          )
+        case 'partial-failure':
+          return HttpResponse.json({ total: 3, updated: 2, notFound: 0, failed: 1 })
+        default:
+          return HttpResponse.json({ total: 2, updated: 2, notFound: 0, failed: 0 })
+      }
+    }),
     http.post(`${API}/servers`, async ({ request }) => {
       const body = await request.json()
       if (opts.spy) opts.spy.create = body

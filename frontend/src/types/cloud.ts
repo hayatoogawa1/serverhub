@@ -73,6 +73,18 @@ export interface CloudLink {
   lastError: string | null
 }
 
+/** 一括更新（`POST /servers/cloud-links/refresh`）の結果サマリ（Backend `CloudRefreshSummary`）。 */
+export interface CloudRefreshSummary {
+  /** 対象になった紐付け数（アクティブなサーバーに紐付くもの）。 */
+  total: number
+  /** 実行状態を取得してキャッシュ更新した数。 */
+  updated: number
+  /** AWS 応答に無く「見つかりません（gone）」にした数。 */
+  notFound: number
+  /** AWS 取得に失敗し lastError だけ記録した数（状態は据え置き）。 */
+  failed: number
+}
+
 /** 紐付けの作成 / 置換リクエスト（Backend `CloudLinkRequest`）。 */
 export interface CloudLinkBody {
   provider: CloudProvider

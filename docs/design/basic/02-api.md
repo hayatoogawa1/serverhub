@@ -197,6 +197,7 @@ requirements §10.1.12 の統一形式。
 | `PUT` | `/servers/{id}/cloud-link` | AWS EC2 等との紐付けの作成 / 置換（`{ provider, externalId, region? }`）。**`servers.version` はバンプしない**（P7） | FR-CLOUD-01 | `200` + `CloudLink` | `400`（インスタンス ID 形式・provider）、`404`（サーバー不存在・削除済み）、`409`（`CLOUD_LINK_CONFLICT`：別サーバーが同じインスタンスを使用中）、`401` |
 | `DELETE` | `/servers/{id}/cloud-link` | 紐付けの解除（冪等） | FR-CLOUD-01 | `204` | `404`（サーバー不存在・削除済み）、`401` |
 | `POST` | `/servers/{id}/cloud-link/refresh` | その 1 台だけ即時取得。**AWS 取得失敗時もキャッシュ値 + `lastError` を `200` で返す**（P8） | FR-CLOUD-01 | `200` + `CloudLink` | `404`（サーバー / 紐付けが無い）、`503`（`CLOUD_PROVIDER_UNAVAILABLE`：provider 未設定・全断）、`401` |
+| `POST` | `/servers/cloud-links/refresh` | 紐付け済み全サーバーをまとめて即時取得（一覧画面の「AWS 実行状態を更新」、Phase 10）。個別失敗は `failed` に計上して `200` | FR-CLOUD-01 | `200` + `{ total, updated, notFound, failed }` | `503`（`CLOUD_PROVIDER_UNAVAILABLE`）、`401` |
 
 **検索クエリ（`GET /servers`、FR-SRV-02）**：`§2.5` の共通パラメータ + `keyword`（ホスト名 / IP / 用途に部分一致、`LIKE` ワイルドカードはエスケープ）、`environment`（enum・完全一致）、`status`（enum・完全一致）、`tags`（配列・指定した全タグを持つ = AND、B5）。各条件 AND、未指定は無視。
 

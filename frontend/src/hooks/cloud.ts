@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cloudApi } from '@/api/cloud'
 import type { ApiError } from '@/api/errors'
 import { queryKeys } from '@/api/queryKeys'
-import type { CloudLink, CloudLinkBody } from '@/types/cloud'
+import type { CloudLink, CloudLinkBody, CloudRefreshSummary } from '@/types/cloud'
 import type { ServerDetail } from '@/types/server'
 
 /**
@@ -47,5 +47,20 @@ export function useRefreshCloudStateMutation(serverId: number) {
   return useMutation<CloudLink, ApiError, void>({
     mutationFn: () => cloudApi.refreshCloudState(serverId),
     onSuccess: (cloudLink) => applyCloudLink(queryClient, serverId, cloudLink),
+  })
+}
+
+/**
+ * 一覧からの一括更新。成功後は一覧を invalidate してチップ（`cloudState`）を最新化する。
+ * 個別の AWS 失敗でも 200（`failed` に計上）なので `onSuccess` で扱う。provider 未設定は 503。
+ * 二重送信の防止（`isPending`）は呼び出し側の責務。
+ */
+export function useRefreshAllCloudStatesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation<CloudRefreshSummary, ApiError, void>({
+    mutationFn: () => cloudApi.refreshAllCloudStates(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.servers.all() })
+    },
   })
 }

@@ -1360,10 +1360,12 @@ erDiagram
 
 - **ユーザー**: 1 名以上を Flyway シード or 初期化スクリプトで作成（メールアドレス + bcrypt ハッシュ）。
   デモ用のダミーアカウントのみリポジトリに含めてよい（実在の秘密ではない、§10.1.18）。
-  - `V2__seed_admin_user.sql`（全環境）: `admin@serverhub.local` / `password`。
-  - `db/prod/V100__update_admin_password.sql`（`prod` プロファイルのみ、[ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）:
-    公開環境では総当たりされにくいデモ値 `serverhub-demo-2026` に変更する。ローカル / CI は
-    `db/migration` のみ適用され `password` のまま（既存テスト不変）。
+  - `V2__seed_admin_user.sql`（全環境）: `admin@serverhub.local`（デモ管理者）/ `password`。
+  - `V4__seed_demo_users.sql`（全環境）: `ops-a@serverhub.local`（運用担当A）/ `ops-b@serverhub.local`（運用担当B）
+    / `password`。複数人利用（同時編集・楽観ロック競合）をデモで試せるように。MVP は権限差なし。
+  - `db/prod/V100` / `V101`（`prod` プロファイルのみ、[ADR 0005](../adr/0005-deployment-ec2-single-instance.md)）:
+    公開環境では上記デモユーザーのパスワードを総当たりされにくい `serverhub-demo-2026` に変更する。
+    ローカル / CI は `db/migration` のみ適用され `password` のまま（既存テスト不変）。
 - **オフラインデモ用シード**（タグ / サーバー / 履歴のダミー）: `infra/docker/initdb/01_seed.sql` に用意し、
   ローカル Docker DB へ `make db-seed`（Flyway 適用後に `psql` で流し込み、冪等）で投入する
   （[ADR 0003](../adr/0003-database-neon-with-local-docker-fallback.md)）。**実在しない値のみ**（§10.1.18）。

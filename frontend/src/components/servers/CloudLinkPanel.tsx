@@ -14,7 +14,12 @@ import { useFeedback } from '@/components/feedback/context'
 import { CloudStateChip } from '@/components/servers/CloudStateChip'
 import { CloudLinkFormModal } from '@/components/servers/CloudLinkFormModal'
 import { useDeleteCloudLinkMutation, useRefreshCloudStateMutation } from '@/hooks/cloud'
-import { CLOUD_PROVIDER_LABELS, toCloudInstanceState, type CloudLink } from '@/types/cloud'
+import {
+  CLOUD_PROVIDER_LABELS,
+  maskInstanceId,
+  toCloudInstanceState,
+  type CloudLink,
+} from '@/types/cloud'
 import { formatDateTime } from '@/utils/format'
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -128,7 +133,12 @@ export function CloudLinkPanel({ serverId, serverHostname, cloudLink }: CloudLin
         </Row>
         <Row label="インスタンス ID">
           <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-            <Typography sx={{ fontFamily: 'monospace' }}>{cloudLink.externalId}</Typography>
+            <Typography
+              sx={{ fontFamily: 'monospace' }}
+              aria-label={`インスタンス ID（一部伏せ字）: ${maskInstanceId(cloudLink.externalId)}`}
+            >
+              {maskInstanceId(cloudLink.externalId)}
+            </Typography>
             <CopyButton value={cloudLink.externalId} ariaLabel="インスタンス ID をコピー" />
           </Stack>
         </Row>

@@ -25,9 +25,11 @@ export const CLOUD_INSTANCE_STATES = [
 ] as const
 export type CloudInstanceState = (typeof CLOUD_INSTANCE_STATES)[number]
 
+// 管理ステータス（active=「稼働中」等）と紛らわしくないよう、AWS 実行状態は
+// AWS コンソールの日本語表記に寄せる（running=実行中 / stopped=停止済み）。
 export const CLOUD_STATE_LABELS: Record<CloudInstanceState, string> = {
-  running: '稼働中',
-  stopped: '停止中',
+  running: '実行中',
+  stopped: '停止済み',
   pending: '起動処理中',
   stopping: '停止処理中',
   terminated: '終了済み',
@@ -46,6 +48,19 @@ export const CLOUD_STATE_TONE: Record<CloudInstanceState, CloudStateTone> = {
   terminated: 'terminal',
   gone: 'terminal',
   unknown: 'unknown',
+}
+
+/**
+ * 画面表示用にインスタンス ID を伏せる（例 `i-0c43a5e4c6680863a` → `i-0c43••••••863a`）。
+ * ID 自体は秘密ではないが、公開環境で実 ID をそのまま晒さないための表示上の配慮。
+ * 完全な値はコピー機能から取得できる（`CloudLinkPanel` の `CopyButton` は生値を渡す）。
+ */
+export function maskInstanceId(id: string): string {
+  const body = id.startsWith('i-') ? id.slice(2) : id
+  if (body.length <= 8) {
+    return `i-${body.slice(0, 2)}${'•'.repeat(4)}${body.slice(-2)}`
+  }
+  return `i-${body.slice(0, 4)}${'•'.repeat(6)}${body.slice(-4)}`
 }
 
 /** 既知の状態文字列でなければ `unknown` 扱い（Backend が新値を返しても壊れないように）。 */

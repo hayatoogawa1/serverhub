@@ -266,8 +266,10 @@ bash infra/aws/deploy.sh v1.0.0
 ### 7.6 動作確認
 
 - `https://<domain>/` → ログイン画面 + 証明書有効、HTTP→HTTPS リダイレクト
-- ログイン: `admin@serverhub.local` / **`serverhub-demo-2026`**（`prod` プロファイルの `db/prod/V100` で
-  `password` から変更される。デモ用でありポートフォリオ公開を想定した固定値）
+- ログイン（`prod` プロファイルの `db/prod/V100` / `V101` で `password` から変更されたデモ資格情報）:
+  - `admin@serverhub.local`（デモ管理者）/ **`serverhub-demo-2026`**
+  - `ops-a@serverhub.local` / `ops-b@serverhub.local`（運用担当）/ **`serverhub-demo-2026`**
+  - MVP は権限差なし。複数人での同時編集・楽観ロック競合のデモに使える
 - サーバー CRUD / 検索 / メンテ履歴 / ダッシュボード
 - Swagger UI（`/swagger-ui.html`）が**認証必須**になっている
 - サーバー詳細「AWS 連携」で実 EC2 の Instance ID を登録 →「今すぐ更新」→ 実行状態が出る（IAM ロール経由）

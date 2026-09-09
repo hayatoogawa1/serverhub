@@ -365,7 +365,7 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 |---|---|
 | `components/servers/CloudStateChip.tsx`（新規） | `state` → ラベル + 色。**`StatusChip`（枠線 + 色ドット）とは意図的に別デザイン（塗りつぶし）**。`role="img"` + `aria-label="AWS 実行状態: …"` |
 | `components/servers/CloudLinkPanel.tsx`（新規） | 明細の**独立セクション「AWS 連携」**（`ServerDetailView` は無変更）。未連携 → 「AWS 未連携」+「連携する」。連携済み → provider / インスタンス ID（コピー）/ リージョン / 「AWS 実行状態」行（`CloudStateChip` +「最終取得 …」+ `stale` バッジ + `lastError` の注記 + 「管理ステータスとは別」の注記）+「今すぐ更新」（`isPending` で二重送信防止）+「連携を編集」/「連携を解除」（確認ダイアログ） |
-| `components/servers/CloudLinkFormModal.tsx`（新規） | インスタンス ID（必須、`i-` 形式）+ リージョン（既定 `ap-northeast-1` プリセット）。409 `CLOUD_LINK_CONFLICT` は externalId フィールドに表示 |
+| `components/servers/CloudLinkFormModal.tsx`（新規） | **新規連携**: インスタンス ID（必須、`i-` 形式）+ リージョン。409 `CLOUD_LINK_CONFLICT` は externalId フィールドに表示。**編集（`current` あり）**: インスタンス ID 欄は出さない（生値を画面に出さない、Phase 10 #10g）。リージョンのみ編集可。ID を変えたい場合は「連携を解除」→ 登録し直し |
 | `pages/ServerDetailPage.tsx` | `ServerDetailView` と履歴セクションの間に `<CloudLinkPanel>` を配置。`ServerDetailView`（管理情報）は無変更 = `StatusChip` はそのまま |
 | `pages/DashboardPage.tsx` | **変更なし**（§1.3） |
 | `components/servers/ServerListTable.tsx`（9-5） | 「AWS 実行状態」列を追加。紐付けあり → `CloudStateChip`（管理「ステータス」列とは別デザイン）、なし・未取得 → 「-」。`TableContainer` の `overflowX: auto` で横スクロール（F7 PC 前提）。既存の列不在アサーションに影響なし |
@@ -376,7 +376,7 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 - 「管理ステータス」と「AWS 実行状態」は**必ず別ラベル・別行**。同じチップ種を使わない。
 - ラベルの語も被らせない: 管理 `active`=「稼働中」に対し、AWS `running`=**「実行中」**、`stopped`=**「停止済み」**
   （AWS コンソールの日本語表記に寄せる、`CLOUD_STATE_LABELS`）。
-- インスタンス ID は画面上は**一部伏せ字**（`i-0c43••••••863a`、`maskInstanceId`）。生値は画面に出さず、コピーも不可。
+- インスタンス ID は**画面のどこにも生値を出さない**: パネルは一部伏せ字（`i-0c43••••••863a`、`maskInstanceId`）、コピー不可、編集モーダルにも出さない（Phase 10 #10f/#10g）。
 - AWS 実行状態には**常に「最終取得 HH:MM」を併記**。
 - `stale=true`（鮮度閾値超過）→「情報が古い可能性があります」。
 - `lastError != null` →「最終取得は成功しています／最新の取得に失敗しました（HH:MM）」を明示。値は消さない。

@@ -126,15 +126,24 @@ export function CloudLinkFormModal({
             fullWidth
             helperText="現在は AWS EC2 のみ対応しています。"
           />
-          <TextField
-            label="EC2 インスタンス ID *"
-            value={values.externalId}
-            onChange={(e) => set('externalId', e.target.value.trim())}
-            error={Boolean(fieldError('externalId'))}
-            helperText={fieldError('externalId') ?? '例: i-0123456789abcdef0'}
-            disabled={submitting}
-            fullWidth
-          />
+          {isEdit ? (
+            // 編集ではインスタンス ID を変更させない（生値も画面に出さない）。
+            // 別インスタンスに繋ぎ替えたい場合は「連携を解除」してやり直す。
+            <Typography variant="caption" color="text.secondary">
+              インスタンス ID
+              は変更できません。別のインスタンスに繋ぎ替える場合は、一度「連携を解除」してから登録し直してください。
+            </Typography>
+          ) : (
+            <TextField
+              label="EC2 インスタンス ID *"
+              value={values.externalId}
+              onChange={(e) => set('externalId', e.target.value.trim())}
+              error={Boolean(fieldError('externalId'))}
+              helperText={fieldError('externalId') ?? '例: i-0123456789abcdef0'}
+              disabled={submitting}
+              fullWidth
+            />
+          )}
           <TextField
             label="リージョン"
             value={values.region}

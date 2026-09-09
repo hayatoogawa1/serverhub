@@ -204,6 +204,25 @@ class CloudLinkApiIntegrationTest {
   }
 
   @Test
+  void bulkRefresh_whenProviderDisabled_returns503() throws Exception {
+    // 紐付けが 0 件でも provider 無効なら 503（個別 refresh と同じセマンティクス）
+    mockMvc
+        .perform(authed(post("/api/v1/servers/cloud-links/refresh")))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value(ErrorCode.CLOUD_PROVIDER_UNAVAILABLE));
+  }
+
+  @Test
+  void bulkRefresh_withoutAuthentication_returns401() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/servers/cloud-links/refresh")
+                .cookie(csrf)
+                .header("X-XSRF-TOKEN", csrf.getValue()))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void cloudLink_withoutAuthentication_returns401() throws Exception {
     // CSRF トークンは付けて（＝ CSRF で弾かれない）認証だけ欠いた状態
     mockMvc

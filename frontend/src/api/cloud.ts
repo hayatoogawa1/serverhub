@@ -1,6 +1,6 @@
 import { apiClient } from '@/api/client'
 import { toApiError } from '@/api/errors'
-import type { CloudLink, CloudLinkBody } from '@/types/cloud'
+import type { CloudLink, CloudLinkBody, CloudRefreshSummary } from '@/types/cloud'
 
 /**
  * クラウド連携（cloud-link サブリソース）API（02-api §3.2、FR-CLOUD-01）。
@@ -18,6 +18,11 @@ export interface CloudApi {
    * サーバー / 紐付けが無ければ 404。
    */
   refreshCloudState(serverId: number): Promise<CloudLink>
+  /**
+   * 紐付け済み全サーバーの実行状態をまとめて即時取得（`POST /servers/cloud-links/refresh`）。
+   * 個別の AWS 失敗は 200 で `failed` に計上。provider 未設定は 503 `CLOUD_PROVIDER_UNAVAILABLE`。
+   */
+  refreshAllCloudStates(): Promise<CloudRefreshSummary>
 }
 
 class CloudApiImpl implements CloudApi {
@@ -41,6 +46,15 @@ class CloudApiImpl implements CloudApi {
   async refreshCloudState(serverId: number): Promise<CloudLink> {
     try {
       const { data } = await apiClient.post<CloudLink>(`/servers/${serverId}/cloud-link/refresh`)
+      return data
+    } catch (error) {
+      throw toApiError(error)
+    }
+  }
+
+  async refreshAllCloudStates(): Promise<CloudRefreshSummary> {
+    try {
+      const { data } = await apiClient.post<CloudRefreshSummary>('/servers/cloud-links/refresh')
       return data
     } catch (error) {
       throw toApiError(error)

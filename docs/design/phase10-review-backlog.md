@@ -42,6 +42,7 @@ Phase 1〜9（MVP + コンテナ化 + AWS EC2 実行状態の参照）完了後�
 |---|---|---|---|---|
 | 9 | `ServerServiceImpl.toDetail` の `com.serverhub.cloud.CloudLinkResponse` FQCN 直書きを import に統一 | `ServerServiceImpl.java` | 軽微リファクタ | **完了（#58）** |
 | 10 | ダッシュボードの「AWS 実行状態」集計・「要確認」パネル | `07-aws-ec2-integration §3`「Phase 10 で検討」 | 要スコープ判断（MVP 拡張） | 保留 |
+| 10b | 一覧画面から AWS 実行状態を一括更新（オーナー要望） | 「今すぐ更新」が詳細画面にしか無い | オーナー GO 済み | **完了（PR-G）**。`POST /servers/cloud-links/refresh`（`CloudStateRefresher` をポーラーと共用）+ 一覧ヘッダの「AWS 実行状態を更新」ボタン。BE +2 テスト群、FE +4 |
 | 11 | 本番 DB を Neon 継続か AWS RDS か | open-issues N2「Phase 9 で判断」だが未決 | 要オーナー判断 | **確定（PR-F）**。Neon 継続 → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md) / open-issues N2 |
 | 12 | ServerHub 自体の AWS 実デプロイ | Phase 9 は「EC2 状態の参照機能」のみ。デプロイ基盤は未着手 | オーナー判断済み | **構成確定 + 資材作成（PR-F）**。EC2 1 台・非 Docker・DB は Neon → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md)。資材: `infra/aws/{nginx-serverhub.conf,serverhub.service,serverhub.env.example,bootstrap.sh,deploy.sh}` + `.github/workflows/release.yml` + `infra/aws/README.md §7`。**実 AWS 側の作成・初回デプロイはオーナー作業**（手順は README §7） |
 | 13 | 実サーバー連携（死活監視・構成自動取得） | open-issues E1「MVP 完了後の独立フェーズ」 | 別フェーズ・要承認 | 保留 |

@@ -9,6 +9,8 @@
 
 > **実装完了**: 9-1（#48）・9-2（#49）・9-3（#50）・9-4（FE 明細、#51）・9-5（FE 一覧列、#52）・
 > 9-6（AWS IAM 文書 + `infra/aws/`、#53）。Phase 9 = FR-CLOUD-01 完了。
+> **Phase 10 追加**: 一覧画面からの一括更新 `POST /servers/cloud-links/refresh`（`CloudStateRefresher` を
+> ポーラーと共用）+「AWS 実行状態を更新」ボタン。
 
 ---
 
@@ -191,6 +193,7 @@ CREATE INDEX ix_server_cloud_links_poll ON server_cloud_links (state_fetched_at)
 | `PUT` | `/api/v1/servers/{id}/cloud-link` | 紐付けの作成 / 置換（upsert） | 要 | `200` `CloudLinkResponse` |
 | `DELETE` | `/api/v1/servers/{id}/cloud-link` | 紐付けの解除 | 要 | `204` |
 | `POST` | `/api/v1/servers/{id}/cloud-link/refresh` | その 1 台だけ即時ライブ取得 | 要 | `200` `CloudLinkResponse`（失敗時もキャッシュ値 + `lastError` を返す、P8） |
+| `POST` | `/api/v1/servers/cloud-links/refresh` | 紐付け済み全サーバーをまとめて即時取得（一覧画面の「AWS 実行状態を更新」。Phase 10 追加） | 要 | `200` `CloudRefreshSummary` `{ total, updated, notFound, failed }`。個別の AWS 失敗は `failed` に計上して `200`（P8 と同じ）。provider 未設定のみ `503 CLOUD_PROVIDER_UNAVAILABLE` |
 
 - `PUT` リクエストボディ: `{ "provider": "aws_ec2", "externalId": "i-...", "region": "ap-northeast-1" }`
   - `externalId` は `^i-[0-9a-f]{8,17}$` で Bean Validation（`@Pattern`、`Hostname` と同じ手法）。
@@ -232,7 +235,7 @@ CREATE INDEX ix_server_cloud_links_poll ON server_cloud_links (state_fetched_at)
 ### 6.2 レイヤ（[CLAUDE.md §3](../../../CLAUDE.md) / Impl 命名規約 §4）
 
 ```
-CloudLinkController  （PUT / DELETE / POST refresh）
+CloudLinkController  （PUT / DELETE / POST {id}/cloud-link/refresh）
   → CloudLinkService (interface) / CloudLinkServiceImpl  @Transactional
       → ServerCloudLinkDao (@Dao interface + 外部 SQL)
       → ServerDao（対象サーバーの存在・非削除チェックに再利用、D-MNT-03 と同じ依存許容）
@@ -240,12 +243,16 @@ CloudLinkController  （PUT / DELETE / POST refresh）
           ├ Ec2CloudStateProviderImpl     （@ConditionalOnProperty enabled=true）
           └ DisabledCloudStateProviderImpl（既定。常に CloudProviderUnavailableException）
 
+CloudLinksController （POST /servers/cloud-links/refresh、Phase 10 追加）
+  → CloudStateRefresher（一括バッチ更新。非 @Transactional。CloudRefreshSummary を返す）
+      → ServerCloudLinkDao / CloudStateProvider / CloudProperties
+
 ServerServiceImpl（既存）
   → CloudLinkReader（読み取り専用ヘルパー）  ← ここだけを追加依存
       → ServerCloudLinkDao / CloudProperties
 
 CloudStatePoller   @Scheduled（@ConditionalOnProperty enabled=true）
-  → ServerCloudLinkDao / CloudStateProvider
+  → CloudStateRefresher（↑と同じ。定期実行と手動一括更新で共用）
 
 CloudExceptionHandler @RestControllerAdvice
   → CloudLinkConflictException → 409、CloudProviderUnavailableException → 503
@@ -260,17 +267,21 @@ CloudExceptionHandler @RestControllerAdvice
     に正規化してからスローする（`server` の `DUPLICATE_HOSTNAME` ハンドラと衝突させない）。
 - `@EnableScheduling` は `CloudConfig` 内の内部 `@Configuration`（`enabled=true` のみ）。
 
-### 6.3 ポーラーの挙動（`CloudStatePoller`）
+### 6.3 一括更新の挙動（`CloudStateRefresher` — 定期実行 `CloudStatePoller` と手動一括 `CloudLinksController` の共用）
 
-1. `serverhub.cloud.enabled=false`（既定）なら何もしない。
+1. provider が無効（`serverhub.cloud.enabled=false` 等）なら `CloudProviderUnavailableException`。
+   ポーラーはこれを握って何もしない。手動一括エンドポイントは `503 CLOUD_PROVIDER_UNAVAILABLE` に変換。
 2. `server_cloud_links` から `provider='aws_ec2'` かつ紐付く `servers.deleted_at IS NULL` の行を取得。
-3. `external_id` を **100 件ずつ**に分割し、`Ec2Client.describeInstances(instanceIds=...)` を呼ぶ。
+3. リージョンごとにまとめ、`external_id` を **`aws.batch-size` 件ずつ**（既定 100）に分割して
+   `Ec2Client.describeInstances(instanceIds=...)` を呼ぶ。
 4. 各インスタンス:
-   - 応答にある → `state` / `state_raw` / `state_fetched_at=now()` を更新、`last_error` をクリア。
-   - 応答に**ない**（`InvalidInstanceID.NotFound` 個別 or バッチから欠落）→ `state='gone'`、`state_fetched_at=now()`。
-   - AWS 呼び出し自体が失敗（スロットリング・認証・ネットワーク）→ `state` は**据え置き**、
-     `last_error` / `last_error_at` を記録（C5/C6）。指数バックオフで次周期。
-5. すべて構造化ログ（`traceId` 付き、[05-cross-cutting](05-cross-cutting.md)）。秘密情報は出さない。
+   - 応答にある → `state` / `state_raw` / `state_fetched_at=now()` を更新、`last_error` をクリア（`updated`）。
+   - 応答に**ない**（`InvalidInstanceID.NotFound` 個別 or バッチから欠落）→ `state='gone'`、`state_fetched_at=now()`（`notFound`）。
+   - AWS 呼び出し自体が失敗（スロットリング・認証・ネットワーク）→ そのバッチの `state` は**据え置き**、
+     `last_error` / `last_error_at` を記録（C5/C6）。処理は続行（`failed`）。
+5. 結果は `CloudRefreshSummary(total, updated, notFound, failed)`。ポーラーは INFO ログ、
+   手動一括はレスポンスボディ。すべて構造化ログ（`traceId` 付き）。秘密情報は出さない。
+6. トランザクションは張らない（AWS 呼び出しを含む長い処理を 1 Tx にしない）。各 `updateState` が個別コミット。
 
 ### 6.4 設定（`application.yml` / 環境変数）— 9-2 で実装
 
@@ -324,8 +335,9 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 |---|---|
 | `CloudStateMapper` | EC2 生値 → 正規化 enum（全 EC2 状態 + 未知値 → `unknown`） |
 | `CloudLinkServiceImpl` | upsert / delete / 対象サーバー不存在 404 / インスタンス ID 形式 / 重複 409（Mockito） |
-| `CloudStatePoller` | 正常更新 / バッチ分割 / 欠落 → `gone` / AWS 例外時に `state` 据え置き + `last_error`（フェイク provider） |
-| `CloudLinkApiIntegrationTest` | `PUT`/`DELETE`/`refresh`/401/404（Testcontainers + フェイク provider） |
+| `CloudStateRefresher` | 正常更新 / バッチ分割 / 欠落 → `gone` / AWS 例外時に `state` 据え置き + `last_error` / provider 無効 → 例外 / `CloudRefreshSummary` の件数（Mockito） |
+| `CloudStatePoller` | `CloudStateRefresher` へ委譲するだけ / provider 無効例外を握る（Mockito） |
+| `CloudLinkApiIntegrationTest` | `PUT`/`DELETE`/`{id}/cloud-link/refresh`/一括 `cloud-links/refresh`/401/404/503（Testcontainers + Disabled provider） |
 | `ServerApiIntegrationTest`（既存） | `cloudLink` フィールドが `null` で返ることを 1 ケース追加（既存アサーションは不変 = C9） |
 
 **既存 89 テストは変更なしで green を維持**（レスポンスへのフィールド追加は既存 `jsonPath` アサーションに影響しない）。
@@ -343,8 +355,8 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 | `types/cloud.ts`（新規） | `CloudInstanceState` union（7 値）、`CLOUD_STATE_LABELS`、`CLOUD_STATE_TONE`（色グループ）、`CloudProvider`、`CloudLink` / `CloudLinkBody` / `CloudLinkFormValues`、`toCloudInstanceState`（未知値 → `unknown`） |
 | `types/server.ts` | `ServerDetail` に `cloudLink?: CloudLink \| null`、`ServerSummary` に `cloudState?` / `cloudStateFetchedAt?`（すべて optional、既存契約を壊さない） |
 | `types/api.ts` | `ERROR_CODES` に `CLOUD_LINK_CONFLICT` / `CLOUD_PROVIDER_UNAVAILABLE` |
-| `api/cloud.ts`（新規、`interface CloudApi` + `CloudApiImpl` + `cloudApi`、§4 命名規約） | `setCloudLink` / `deleteCloudLink` / `refreshCloudState`。**FE は AWS を直接呼ばない** |
-| `hooks/cloud.ts`（新規） | `useSetCloudLinkMutation` / `useDeleteCloudLinkMutation` / `useRefreshCloudStateMutation`。成功時 `setQueryData` で `servers.detail(id).cloudLink` を差し替え + `['servers']` invalidate（別クエリは作らない） |
+| `api/cloud.ts`（新規、`interface CloudApi` + `CloudApiImpl` + `cloudApi`、§4 命名規約） | `setCloudLink` / `deleteCloudLink` / `refreshCloudState` / `refreshAllCloudStates`（Phase 10）。**FE は AWS を直接呼ばない** |
+| `hooks/cloud.ts`（新規） | `useSetCloudLinkMutation` / `useDeleteCloudLinkMutation` / `useRefreshCloudStateMutation` / `useRefreshAllCloudStatesMutation`（Phase 10、成功時 `['servers']` invalidate）。個別 mutation は成功時 `setQueryData` で `servers.detail(id).cloudLink` を差し替え + `['servers']` invalidate（別クエリは作らない） |
 | `validation/cloudLink.ts`（新規） | インスタンス ID 形式（Backend の `@Pattern` と同一）、リージョン形式、`toCloudLinkBody` |
 
 ### 7.2 コンポーネント（9-4 で実装）
@@ -357,6 +369,7 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 | `pages/ServerDetailPage.tsx` | `ServerDetailView` と履歴セクションの間に `<CloudLinkPanel>` を配置。`ServerDetailView`（管理情報）は無変更 = `StatusChip` はそのまま |
 | `pages/DashboardPage.tsx` | **変更なし**（§1.3） |
 | `components/servers/ServerListTable.tsx`（9-5） | 「AWS 実行状態」列を追加。紐付けあり → `CloudStateChip`（管理「ステータス」列とは別デザイン）、なし・未取得 → 「-」。`TableContainer` の `overflowX: auto` で横スクロール（F7 PC 前提）。既存の列不在アサーションに影響なし |
+| `pages/ServerListPage.tsx`（Phase 10） | ヘッダに「AWS 実行状態を更新」ボタン（`useRefreshAllCloudStatesMutation`）。**表示中の行に紐付けがある時だけ**表示・`isPending` で二重送信防止・完了トーストで件数、503 は「AWS 連携が有効になっていません」 |
 
 ### 7.3 表示ルール（C4 / C5）
 

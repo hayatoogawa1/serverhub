@@ -243,4 +243,56 @@ describe('ServerListPage', () => {
     expect(dbRow?.textContent).toContain('-')
     expect(within(dbRow as HTMLElement).queryByRole('img', { name: /AWS 実行状態/ })).toBeNull()
   })
+
+  it('「AWS 実行状態を更新」ボタンで一括更新を呼び、結果をトースト表示する', async () => {
+    const spy: { bulkCloudRefreshCalled?: boolean } = {}
+    server.use(...authenticatedHandlers, ...serverHandlers({ spy }))
+    const user = userEvent.setup()
+    renderList()
+    await screen.findByText('web-prod-01')
+
+    await user.click(screen.getByRole('button', { name: 'AWS 実行状態を更新' }))
+
+    expect(await screen.findByText(/AWS 実行状態を更新しました（2 件）/)).toBeInTheDocument()
+    expect(spy.bulkCloudRefreshCalled).toBe(true)
+  })
+
+  it('一括更新に一部失敗があればエラートーストで件数を出す', async () => {
+    server.use(
+      ...authenticatedHandlers,
+      ...serverHandlers({ bulkCloudRefreshOutcome: 'partial-failure' }),
+    )
+    const user = userEvent.setup()
+    renderList()
+    await screen.findByText('web-prod-01')
+
+    await user.click(screen.getByRole('button', { name: 'AWS 実行状態を更新' }))
+    expect(await screen.findByText(/失敗 1 件/)).toBeInTheDocument()
+  })
+
+  it('一括更新で provider 未設定なら 503 をエラートースト表示する', async () => {
+    server.use(
+      ...authenticatedHandlers,
+      ...serverHandlers({ bulkCloudRefreshOutcome: 'provider-unavailable' }),
+    )
+    const user = userEvent.setup()
+    renderList()
+    await screen.findByText('web-prod-01')
+
+    await user.click(screen.getByRole('button', { name: 'AWS 実行状態を更新' }))
+    expect(await screen.findByText('AWS 連携が有効になっていません。')).toBeInTheDocument()
+  })
+
+  it('AWS 実行状態を持つ行が無ければ「AWS 実行状態を更新」ボタンを出さない', async () => {
+    const noCloud = serverSummariesFixture.map((s) => ({
+      ...s,
+      cloudState: null,
+      cloudStateFetchedAt: null,
+    }))
+    server.use(...authenticatedHandlers, ...serverHandlers({ summaries: noCloud }))
+    renderList()
+    await screen.findByText('web-prod-01')
+
+    expect(screen.queryByRole('button', { name: 'AWS 実行状態を更新' })).not.toBeInTheDocument()
+  })
 })

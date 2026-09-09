@@ -236,7 +236,7 @@ describe('ServerListPage', () => {
 
     expect(screen.getByRole('columnheader', { name: 'AWS 実行状態' })).toBeInTheDocument()
     // fixture: web-prod-01 は管理ステータス active / AWS 実行状態 stopped（別概念）
-    expect(screen.getByRole('img', { name: 'AWS 実行状態: 停止中' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'AWS 実行状態: 停止済み' })).toBeInTheDocument()
     expect(screen.getByText('稼働中')).toBeInTheDocument()
     // db-stg-01 は AWS 未連携 → その行のセルは「-」
     const dbRow = screen.getByText('db-stg-01').closest('tr')

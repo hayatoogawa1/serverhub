@@ -24,8 +24,8 @@ SELECT to_regclass('public.servers') IS NOT NULL
 
 BEGIN;
 
--- ユーザー（ログイン: admin@serverhub.local / password）は Flyway
--- V2__seed_admin_user.sql で全環境共通にシードするため、ここでは投入しない。
+-- ユーザー（admin@serverhub.local / ops-a@ / ops-b@、いずれも password）は Flyway
+-- V2__seed_admin_user.sql / V4__seed_demo_users.sql で全環境共通にシードするため、ここでは投入しない。
 
 -- ── タグ ──────────────────────────────────────────────────────────────
 INSERT INTO tags (name) VALUES

@@ -132,8 +132,8 @@ describe('ServerDetailPage', () => {
     renderDetail('/servers/1')
     await screen.findByRole('heading', { level: 1, name: serverDetailFixture.hostname })
 
-    // AWS 実行状態（停止中）は専用チップ。管理ステータス（稼働中）とは別物
-    expect(await screen.findByRole('img', { name: 'AWS 実行状態: 停止中' })).toBeInTheDocument()
+    // AWS 実行状態（停止済み）は専用チップ。管理ステータス（稼働中）とは別物
+    expect(await screen.findByRole('img', { name: 'AWS 実行状態: 停止済み' })).toBeInTheDocument()
     expect(screen.getByText('稼働中')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'AWS 連携' })).toBeInTheDocument()
   })

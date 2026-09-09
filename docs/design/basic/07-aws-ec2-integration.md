@@ -374,6 +374,9 @@ implementation("software.amazon.awssdk:ssooidc")                // 同上（OIDC
 ### 7.3 表示ルール（C4 / C5）
 
 - 「管理ステータス」と「AWS 実行状態」は**必ず別ラベル・別行**。同じチップ種を使わない。
+- ラベルの語も被らせない: 管理 `active`=「稼働中」に対し、AWS `running`=**「実行中」**、`stopped`=**「停止済み」**
+  （AWS コンソールの日本語表記に寄せる、`CLOUD_STATE_LABELS`）。
+- インスタンス ID は画面上は**一部伏せ字**（`i-0c43••••••863a`）。生値はコピー機能から取得可（`maskInstanceId`）。
 - AWS 実行状態には**常に「最終取得 HH:MM」を併記**。
 - `stale=true`（鮮度閾値超過）→「情報が古い可能性があります」。
 - `lastError != null` →「最終取得は成功しています／最新の取得に失敗しました（HH:MM）」を明示。値は消さない。

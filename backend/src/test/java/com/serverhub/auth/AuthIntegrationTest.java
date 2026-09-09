@@ -84,6 +84,23 @@ class AuthIntegrationTest {
   }
 
   @Test
+  void seededOpsUserCanLogin() throws Exception {
+    // V4__seed_demo_users.sql の運用担当ユーザー（既定プロファイルなので password のまま）
+    Cookie csrfCookie = fetchCsrfCookie();
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"ops-a@serverhub.local\",\"password\":\"password\"}")
+                .cookie(csrfCookie)
+                .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.email").value("ops-a@serverhub.local"))
+        .andExpect(jsonPath("$.displayName").value("運用担当A"));
+  }
+
+  @Test
   void loginWithWrongPasswordReturns401WithoutRevealingReason() throws Exception {
     Cookie csrfCookie = fetchCsrfCookie();
 

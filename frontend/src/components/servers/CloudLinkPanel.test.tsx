@@ -22,10 +22,17 @@ describe('CloudLinkPanel', () => {
 
   it('連携済みは実行状態チップ・最終取得時刻・「管理ステータスとは別」の注記を出す', () => {
     render(cloudLinkFixture)
-    expect(screen.getByRole('img', { name: 'AWS 実行状態: 停止中' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'AWS 実行状態: 停止済み' })).toBeInTheDocument()
     expect(screen.getByText(/最終取得:/)).toBeInTheDocument()
     expect(screen.getByText(/サーバーの管理ステータスとは別の情報です/)).toBeInTheDocument()
-    expect(screen.getByText('i-0123456789abcdef0')).toBeInTheDocument()
+  })
+
+  it('インスタンス ID は一部伏せ字で表示し、生値はコピーボタンから取得できる', () => {
+    render(cloudLinkFixture)
+    // i-0123456789abcdef0 → i-0123••••••def0
+    expect(screen.getByText('i-0123••••••def0')).toBeInTheDocument()
+    expect(screen.queryByText('i-0123456789abcdef0')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'インスタンス ID をコピー' })).toBeInTheDocument()
   })
 
   it('stale なら「情報が古い可能性」バッジ', () => {
@@ -35,7 +42,7 @@ describe('CloudLinkPanel', () => {
 
   it('lastError があればキャッシュ表示 + 取得失敗の注記（値は消さない）', () => {
     render({ ...cloudLinkFixture, state: 'running', lastError: 'throttled' })
-    expect(screen.getByRole('img', { name: 'AWS 実行状態: 稼働中' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'AWS 実行状態: 実行中' })).toBeInTheDocument()
     expect(screen.getByText(/最新の取得に失敗しました/)).toBeInTheDocument()
   })
 

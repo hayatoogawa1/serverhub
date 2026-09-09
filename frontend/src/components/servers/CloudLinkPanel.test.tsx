@@ -27,12 +27,14 @@ describe('CloudLinkPanel', () => {
     expect(screen.getByText(/サーバーの管理ステータスとは別の情報です/)).toBeInTheDocument()
   })
 
-  it('インスタンス ID は一部伏せ字で表示し、生値はコピーボタンから取得できる', () => {
+  it('インスタンス ID は一部伏せ字のみ表示し、生値もコピーも出さない', () => {
     render(cloudLinkFixture)
     // i-0123456789abcdef0 → i-0123••••••def0
     expect(screen.getByText('i-0123••••••def0')).toBeInTheDocument()
     expect(screen.queryByText('i-0123456789abcdef0')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'インスタンス ID をコピー' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'インスタンス ID をコピー' }),
+    ).not.toBeInTheDocument()
   })
 
   it('stale なら「情報が古い可能性」バッジ', () => {

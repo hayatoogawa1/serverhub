@@ -9,7 +9,6 @@ import Typography from '@mui/material/Typography'
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
-import { CopyButton } from '@/components/common/CopyButton'
 import { useFeedback } from '@/components/feedback/context'
 import { CloudStateChip } from '@/components/servers/CloudStateChip'
 import { CloudLinkFormModal } from '@/components/servers/CloudLinkFormModal'
@@ -132,15 +131,13 @@ export function CloudLinkPanel({ serverId, serverHostname, cloudLink }: CloudLin
           <Typography variant="body2">{CLOUD_PROVIDER_LABELS[cloudLink.provider]}</Typography>
         </Row>
         <Row label="インスタンス ID">
-          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-            <Typography
-              sx={{ fontFamily: 'monospace' }}
-              aria-label={`インスタンス ID（一部伏せ字）: ${maskInstanceId(cloudLink.externalId)}`}
-            >
-              {maskInstanceId(cloudLink.externalId)}
-            </Typography>
-            <CopyButton value={cloudLink.externalId} ariaLabel="インスタンス ID をコピー" />
-          </Stack>
+          {/* 公開環境で実 ID を晒さないため一部伏せ字。コピーも不可（生値は画面に出さない）。 */}
+          <Typography
+            sx={{ fontFamily: 'monospace' }}
+            aria-label={`インスタンス ID（一部伏せ字）: ${maskInstanceId(cloudLink.externalId)}`}
+          >
+            {maskInstanceId(cloudLink.externalId)}
+          </Typography>
         </Row>
         <Row label="リージョン">
           <Typography variant="body2">{cloudLink.region ?? '-'}</Typography>

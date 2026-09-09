@@ -241,7 +241,7 @@ Phase 10 で一覧からの一括更新（`POST /servers/cloud-links/refresh`、
 - **git pre-commit**: 変更ファイルのみ Prettier `--check` + ESLint、Java は `spotlessCheck`、`.env` 混入検知。
 - **git pre-push**: 変更のあった側の `./gradlew check` / FE の typecheck+lint+test+build（Docker 不在時は BE テストをスキップ）。
 - **GitHub Actions**（`.github/workflows/ci.yml`）: push / PR で BE `./gradlew check`（Testcontainers 含む）+ FE 全チェック。
-- **Skills**（`.claude/skills/`）: `verify`（完了前の検証手順）、`spec-sync`（コードと設計書の同期）。
+- **Skills**（`.claude/skills/`）: `verify`（完了前の検証手順）、`spec-sync`（コード変更をテストと設計書に追従させる手順）。
 
 ---
 

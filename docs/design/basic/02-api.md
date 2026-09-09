@@ -22,7 +22,7 @@ DB スキーマは **Phase 4** で確定する。
 | **D-API-02** | 成功レスポンスは軽量形式 | 単一リソースは素の JSON オブジェクト。ページング一覧は `{ content, page }`。ページングなしの配列は素の JSON 配列。ラッパー（`data` 等）で包まない |
 | **D-API-03** | エラーレスポンスは統一エンベロープ | `{ code, message, traceId }`（requirements §10.1.12）。`400` は `errors[]`（フィールド単位）を追加 |
 | **D-API-04** | JSON キーは `camelCase` | Java 側フィールド名と一致（`hostname` / `ipAddress` / `createdAt` …）。`snake_case` は DB のみ |
-| **D-API-05** | 日時は ISO 8601 文字列 | `timestamp` は `2026-09-04T12:34:56+09:00`（オフセット付き）。`date`（実施日）は `2026-09-04` |
+| **D-API-05** | 日時は ISO 8601 文字列 | `timestamp` は**オフセット付き**（`2026-09-04T12:34:56+09:00` / `...Z`）。`date`（実施日）は `2026-09-04`。実装は `common.time.Timestamps#toOffset` でレスポンス組み立て時にオフセットを付与（Doma が `OffsetDateTime` 非対応のため、エンティティは `LocalDateTime`。→ [01-common](../detail/01-common.md) 監査列） |
 
 ### 1.2 採用理由と代替案
 

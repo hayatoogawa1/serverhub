@@ -108,6 +108,11 @@ class ServerApiIntegrationTest {
         .andExpect(jsonPath("$.status").value("active"))
         .andExpect(jsonPath("$.virtualizationType").value("virtual"))
         .andExpect(jsonPath("$.version").value(0))
+        // 日時はオフセット付き ISO 8601（D-API-05）。UTC なら Z、JST なら +09:00 等
+        .andExpect(
+            jsonPath("$.createdAt", org.hamcrest.Matchers.matchesRegex(".*(Z|[+-]\\d{2}:\\d{2})$")))
+        .andExpect(
+            jsonPath("$.updatedAt", org.hamcrest.Matchers.matchesRegex(".*(Z|[+-]\\d{2}:\\d{2})$")))
         // クラウド連携なしのサーバーは cloudLink / cloudState を出さない（FR-CLOUD-01、加算的変更）
         .andExpect(jsonPath("$.cloudLink").doesNotExist())
         .andExpect(

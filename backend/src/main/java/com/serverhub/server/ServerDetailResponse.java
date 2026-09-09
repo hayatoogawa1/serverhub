@@ -2,7 +2,7 @@ package com.serverhub.server;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.serverhub.cloud.CloudLinkResponse;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -28,6 +28,6 @@ public record ServerDetailResponse(
     String owner,
     List<String> tags,
     Long version,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
+    OffsetDateTime createdAt,
+    OffsetDateTime updatedAt,
     CloudLinkResponse cloudLink) {}

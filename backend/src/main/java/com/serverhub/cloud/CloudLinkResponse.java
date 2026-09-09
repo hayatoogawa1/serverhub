@@ -1,8 +1,10 @@
 package com.serverhub.cloud;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.serverhub.common.time.Timestamps;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * クラウド連携の状態（{@code ServerDetailResponse.cloudLink}、{@code PUT/POST /servers/{id}/cloud-link} の戻り）。
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
  *
  * @param state provider 横断の正規化値（{@code running} 等）。未取得は {@code null}
  * @param stateRaw provider の生値
- * @param stateFetchedAt 最後に取得に成功した時刻。UI は「最終取得 HH:MM」を出す
+ * @param stateFetchedAt 最後に取得に成功した時刻（オフセット付き、D-API-05）。UI は「最終取得 HH:MM」を出す
  * @param stale {@code stateFetchedAt} が鮮度閾値を超えている（情報が古い可能性）
  * @param lastError 直近の取得失敗理由（成功していれば {@code null}）。値があっても {@code state} は最後の成功値
  */
@@ -22,7 +24,7 @@ public record CloudLinkResponse(
     String region,
     String state,
     String stateRaw,
-    LocalDateTime stateFetchedAt,
+    OffsetDateTime stateFetchedAt,
     boolean stale,
     String lastError) {
 
@@ -37,7 +39,7 @@ public record CloudLinkResponse(
         link.region(),
         link.state() == null ? null : link.state().value(),
         link.stateRaw(),
-        link.stateFetchedAt(),
+        Timestamps.toOffset(link.stateFetchedAt()),
         stale,
         link.lastError());
   }

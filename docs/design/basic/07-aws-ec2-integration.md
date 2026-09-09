@@ -88,7 +88,7 @@ AWS コンソール / API で EC2 を停止したら、ServerHub の当該サー
 | P10 | サーバー論理削除時のリンク | (a) 物理削除（`server_tags` と同じ） / (b) 残す | **(b) 残す**。全読取クエリが `servers.deleted_at IS NULL` を JOIN 条件にするのでポーリング対象から自然に外れる。復元時（将来）もリンクが生きる。Service に削除ロジックを足さない |
 | P11 | ローカル / テストでの AWS | LocalStack / SDK フェイク / 無効化 | **`serverhub.cloud.enabled=false` 既定 + `CloudStateProvider` インターフェースのフェイク実装**。CI・ローカルは AWS を一切呼ばない |
 | P12 | リージョン | 単一（設定値） / 複数 | **単一**（`serverhub.cloud.aws.region`）。複数は将来（`server_cloud_links.region` は保持済み） |
-| P13 | ポーリング間隔・鮮度閾値 | — | 間隔 **5 分**（`serverhub.cloud.poll-interval=PT5M`）、`state_fetched_at` が**閾値（既定 15 分）**を超えたら UI で「情報が古い可能性」を表示 |
+| P13 | ポーリング間隔・鮮度閾値 | — | 間隔 **1 分**（`serverhub.cloud.poll-interval=PT1M`、当初 5 分から短縮）、`state_fetched_at` が**閾値（既定 5 分）**を超えたら UI で「情報が古い可能性」を表示。数百台規模なら環境変数で間隔を伸ばす |
 | P14 | 認証情報（本番） | 静的キー / IAM ロール | **IAM ロール**（ECS タスクロール / EC2 インスタンスプロファイル）。静的キーは保存しない（BR-11） |
 | P15 | 新エラーコード | 追加する / しない | `CLOUD_PROVIDER_UNAVAILABLE`（503）を**追加**するが用途は限定（provider 未設定・全断のみ。個別インスタンスの取得失敗は `lastError` で表現し 200） |
 
@@ -289,8 +289,8 @@ CloudExceptionHandler @RestControllerAdvice
 serverhub:
   cloud:
     enabled: ${SERVERHUB_CLOUD_ENABLED:false}   # 既定 OFF。ローカル・CI は false
-    poll-interval: PT5M
-    staleness-threshold: PT15M                   # これを超えたら stale=true（9-3 で使用）
+    poll-interval: ${SERVERHUB_CLOUD_POLL_INTERVAL:PT1M}
+    staleness-threshold: ${SERVERHUB_CLOUD_STALENESS_THRESHOLD:PT5M}   # これを超えたら stale=true
     aws:
       region: ${SERVERHUB_CLOUD_AWS_REGION:ap-northeast-1}
       batch-size: 100                            # DescribeInstances 1 回あたり（AWS 上限）
@@ -446,8 +446,8 @@ ServerHub が使う IAM ポリシー（読み取り専用）:
 
 - **単一インスタンス前提**（S6）。ポーラーは 1 プロセス想定。将来スケールアウトする場合:
   ShedLock（DB ロック）でリーダーのみポーリング、または P4(b) の別ワーカーへ分離。→ open-issues に追記。
-- レート制限: `DescribeInstances` は 100 件/呼び出し。数百台規模（B7）でも 5 分間隔なら余裕。
-  スロットリング時は指数バックオフ。
+- レート制限: `DescribeInstances` は 100 件/呼び出し。1 分間隔でも数十台規模なら余裕（1 回の呼び出しで全台問い合わせ）。
+  数百台規模（B7）では環境変数で間隔を伸ばす。スロットリング時は指数バックオフ。
 - ダッシュボードの `refetchInterval` 不使用方針（S8）は不変。鮮度はサーバー側（`state_fetched_at`）で管理。
 - 監査: 紐付けの作成 / 解除は業務イベント INFO ログ（[05-cross-cutting §4.3](05-cross-cutting.md) と同じ方針）。
 

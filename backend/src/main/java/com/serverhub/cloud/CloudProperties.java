@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>既定は<b>無効</b>。ローカル・CI では {@code enabled=false} のまま（AWS を一切呼ばない）。
  *
  * @param enabled provider を有効化するか（{@code false} なら {@link DisabledCloudStateProviderImpl} + ポーラー停止）
- * @param pollInterval ポーリング間隔（ISO-8601 Duration、例 {@code PT5M}）
+ * @param pollInterval ポーリング間隔（ISO-8601 Duration、既定 {@code PT1M}）
  * @param stalenessThreshold この時間を超えて未取得なら UI で「情報が古い可能性」を表示（レスポンスの {@code stale}）
  * @param aws AWS 固有設定
  */
@@ -19,10 +19,11 @@ public record CloudProperties(
 
   public CloudProperties {
     if (pollInterval == null) {
-      pollInterval = Duration.ofMinutes(5);
+      pollInterval = Duration.ofMinutes(1);
     }
     if (stalenessThreshold == null) {
-      stalenessThreshold = Duration.ofMinutes(15);
+      // ポーリング約 5 回分。これを超えて未取得なら「取得できていない」とみなす
+      stalenessThreshold = Duration.ofMinutes(5);
     }
     if (aws == null) {
       aws = new Aws(null, 0);

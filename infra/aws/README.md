@@ -17,7 +17,7 @@
 | できること | できないこと（設計上の禁止事項） |
 |---|---|
 | 紐付けた EC2 インスタンスの**実行状態を参照**（`running` / `stopped` 等） | EC2 の**起動・停止・再起動・終了**（`ec2:StartInstances` 等は使わない） |
-| 定期ポーリング（既定 5 分）＋ 明細画面からの手動更新 | 構成情報の自動取得・`servers` 属性の自動更新 |
+| 定期ポーリング（既定 1 分）＋ 画面からの手動更新 | 構成情報の自動取得・`servers` 属性の自動更新 |
 | — | ServerHub の管理ステータス（`servers.status`）の自動更新（**絶対にしない**） |
 
 使う AWS API は **`ec2:DescribeInstances` の 1 つだけ**。
@@ -112,7 +112,7 @@ make be-run
 起動直後の INFO ログに 1 行出る:
 
 ```
-cloud integration: enabled=true, provider=Ec2CloudStateProviderImpl, region=ap-northeast-1, pollInterval=PT5M, ...
+cloud integration: enabled=true, provider=Ec2CloudStateProviderImpl, region=ap-northeast-1, pollInterval=PT1M, ...
 ```
 
 - `enabled=false` または `provider=DisabledCloudStateProviderImpl` → **環境変数が JVM に届いていない**。
@@ -146,8 +146,8 @@ CDK / Terraform で管理する場合も同じポリシー JSON をそのまま�
 |---|---|---|
 | `SERVERHUB_CLOUD_ENABLED` | `false` | `true` で AWS 連携を有効化（`Ec2CloudStateProviderImpl` + ポーラー） |
 | `SERVERHUB_CLOUD_AWS_REGION` | `ap-northeast-1` | 問い合わせるリージョン。IAM ポリシーの `aws:RequestedRegion` と合わせる |
-| `SERVERHUB_CLOUD_POLL_INTERVAL` | `PT5M` | ポーリング間隔（ISO-8601 Duration） |
-| `SERVERHUB_CLOUD_STALENESS_THRESHOLD` | `PT15M` | これを超えて未取得なら UI で「情報が古い可能性」を表示 |
+| `SERVERHUB_CLOUD_POLL_INTERVAL` | `PT1M` | ポーリング間隔（ISO-8601 Duration）。数百台規模なら間隔を伸ばす |
+| `SERVERHUB_CLOUD_STALENESS_THRESHOLD` | `PT5M` | これを超えて未取得なら UI で「情報が古い可能性」を表示（ポーリング約 5 回分） |
 | `SPRING_PROFILES_ACTIVE` | （未設定） | 本番デプロイでは `prod` を設定。`application-prod.yml` が Secure Cookie・`forward-headers-strategy`（前段プロキシの `X-Forwarded-*` 信頼）・Swagger 認証必須・`com.serverhub` ログを INFO に切り替える |
 
 > `SERVERHUB_CLOUD_POLL_INTERVAL` / `SERVERHUB_CLOUD_STALENESS_THRESHOLD` は

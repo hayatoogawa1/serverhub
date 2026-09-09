@@ -74,10 +74,32 @@ describe('CloudLinkFormModal', () => {
     ).toBeInTheDocument()
   })
 
-  it('編集モードでは既存値を初期表示し「更新」ボタン', () => {
+  it('編集モードはインスタンス ID を出さず（生値非表示）、リージョンのみ編集可・「更新」ボタン', () => {
     server.use(...authenticatedHandlers, ...cloudLinkHandlers())
     open({ current: cloudLinkFixture })
-    expect(screen.getByLabelText('EC2 インスタンス ID *')).toHaveValue(cloudLinkFixture.externalId)
+
+    // インスタンス ID フィールドは出さない。生値も画面に無い
+    expect(screen.queryByLabelText('EC2 インスタンス ID *')).not.toBeInTheDocument()
+    expect(screen.queryByText(cloudLinkFixture.externalId)).not.toBeInTheDocument()
+    expect(screen.getByText(/インスタンス ID は変更できません/)).toBeInTheDocument()
+    // リージョンは既存値を初期表示して編集可
+    expect(screen.getByLabelText('リージョン')).toHaveValue(cloudLinkFixture.region)
     expect(screen.getByRole('button', { name: '更新' })).toBeInTheDocument()
+  })
+
+  it('編集で「更新」すると既存のインスタンス ID を保ったまま PUT する', async () => {
+    const spy: { put?: unknown } = {}
+    server.use(...authenticatedHandlers, ...cloudLinkHandlers({ spy }))
+    const user = userEvent.setup()
+    open({ current: cloudLinkFixture, onSaved: vi.fn() })
+
+    await user.click(screen.getByRole('button', { name: '更新' }))
+
+    await waitFor(() =>
+      expect(spy.put).toMatchObject({
+        provider: 'aws_ec2',
+        externalId: cloudLinkFixture.externalId,
+      }),
+    )
   })
 })

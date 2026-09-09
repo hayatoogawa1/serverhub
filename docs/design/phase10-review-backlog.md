@@ -47,6 +47,7 @@ Phase 1〜9（MVP + コンテナ化 + AWS EC2 実行状態の参照）完了後�
 | 10d | ポーリング間隔 5 分 → 1 分（オーナー要望） | 反映が最大 5 分遅い | オーナー GO 済み | **完了（#63）**。`poll-interval` 既定 `PT1M`、`staleness-threshold` `PT5M` |
 | 10e | 日時のタイムゾーンバグ（デプロイ先で発覚） | API が `LocalDateTime`（オフセットなし）を返し、EC2（UTC）だと更新日時が 9 時間ずれて表示。D-API-05 違反 | オーナー GO 済み（B 案） | **完了（PR-I）**。レスポンス DTO を `OffsetDateTime` 化（`Timestamps.toOffset`。エンティティは Doma 制約で `LocalDateTime` のまま）+ systemd unit に `TZ=Asia/Tokyo`。FE は無改修（元々オフセット付き前提） |
 | 10f | インスタンス ID のコピー不可（オーナー方針変更） | #64 で「伏せ字 + コピー可」にしたが公開環境では生値を出したくない | オーナー GO 済み | **完了（#65）**。`CopyButton` 削除、伏せ字表示のみ |
+| 10g | 「連携を編集」でインスタンス ID の生値が編集欄に露出 | 編集モーダルが `current.externalId` を平文の TextField にプリフィル（#65 の意図と矛盾） | オーナー GO 済み（2 案） | **完了（PR-J）**。編集モードはインスタンス ID 欄を出さず、リージョンのみ編集可。ID 変更は「解除→登録し直し」 |
 | 11 | 本番 DB を Neon 継続か AWS RDS か | open-issues N2「Phase 9 で判断」だが未決 | 要オーナー判断 | **確定（PR-F）**。Neon 継続 → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md) / open-issues N2 |
 | 12 | ServerHub 自体の AWS 実デプロイ | Phase 9 は「EC2 状態の参照機能」のみ。デプロイ基盤は未着手 | オーナー判断済み | **構成確定 + 資材作成（PR-F）**。EC2 1 台・非 Docker・DB は Neon → [ADR 0005](../adr/0005-deployment-ec2-single-instance.md)。資材: `infra/aws/{nginx-serverhub.conf,serverhub.service,serverhub.env.example,bootstrap.sh,deploy.sh}` + `.github/workflows/release.yml` + `infra/aws/README.md §7`。**実 AWS 側の作成・初回デプロイはオーナー作業**（手順は README §7） |
 | 13 | 実サーバー連携（死活監視・構成自動取得） | open-issues E1「MVP 完了後の独立フェーズ」 | 別フェーズ・要承認 | 保留 |

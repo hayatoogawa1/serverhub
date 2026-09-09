@@ -44,8 +44,8 @@ springdoc:
 serverhub:
   cloud:
     enabled: ${SERVERHUB_CLOUD_ENABLED:false}
-    poll-interval: ${SERVERHUB_CLOUD_POLL_INTERVAL:PT5M}
-    staleness-threshold: ${SERVERHUB_CLOUD_STALENESS_THRESHOLD:PT15M}
+    poll-interval: ${SERVERHUB_CLOUD_POLL_INTERVAL:PT1M}
+    staleness-threshold: ${SERVERHUB_CLOUD_STALENESS_THRESHOLD:PT5M}
     aws:
       region: ${SERVERHUB_CLOUD_AWS_REGION:ap-northeast-1}
       batch-size: 100
